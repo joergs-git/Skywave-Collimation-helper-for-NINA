@@ -1,0 +1,13 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="OptionsTemplate.xaml" />
+        <ResourceDictionary Source="SkwDefocusTemplate.xaml" />
+        <ResourceDictionary Source="SkwCircularCaptureTemplate.xaml" />
+        <ResourceDictionary Source="SkwIntegrateFramesTemplate.xaml" />
+        <ResourceDictionary Source="SkwCollimationRunTemplate.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+</ResourceDictionary>

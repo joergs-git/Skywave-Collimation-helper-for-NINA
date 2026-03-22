@@ -1,0 +1,162 @@
+using NINA.Image.ImageData;
+using NINA.Image.Interfaces;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace NINA.AstroCircular.SkyWaver.Imaging {
+
+    /// <summary>
+    /// Native FITS frame integration: pixel-by-pixel averaging, optional crop-to-circle,
+    /// optional bin 2x2 downsample. Produces a 16-bit monochrome array for SkyWave.
+    /// </summary>
+    public class FitsAverager {
+
+        /// <summary>
+        /// Result of the integration process.
+        /// </summary>
+        public class IntegrationResult {
+            public ushort[] PixelData { get; set; }
+            public int Width { get; set; }
+            public int Height { get; set; }
+            public int FrameCount { get; set; }
+        }
+
+        /// <summary>
+        /// Load FITS files and compute pixel-by-pixel average.
+        /// </summary>
+        /// <param name="inputFiles">Paths to FITS sub-frames</param>
+        /// <param name="imageDataFactory">NINA's image data factory for reading FITS</param>
+        /// <param name="ct">Cancellation token</param>
+        /// <returns>Averaged pixel data as double array with dimensions</returns>
+        public static async Task<(double[] data, int width, int height, int frameCount)> Average(
+            List<string> inputFiles, IImageDataFactory imageDataFactory, CancellationToken ct) {
+
+            if (inputFiles == null || inputFiles.Count < 2) {
+                throw new InvalidOperationException("Need at least 2 frames for integration.");
+            }
+
+            // Load first frame to get dimensions
+            var firstImage = await imageDataFactory.CreateFromFile(inputFiles[0], 16, false, ct);
+            int width = firstImage.Properties.Width;
+            int height = firstImage.Properties.Height;
+            int pixelCount = width * height;
+
+            // Accumulator buffer
+            double[] accumulator = new double[pixelCount];
+            var firstData = firstImage.Data.FlatArray;
+            for (int p = 0; p < pixelCount; p++) {
+                accumulator[p] = firstData[p];
+            }
+
+            // Add remaining frames
+            int frameCount = 1;
+            for (int f = 1; f < inputFiles.Count; f++) {
+                ct.ThrowIfCancellationRequested();
+
+                if (!File.Exists(inputFiles[f])) continue;
+
+                var image = await imageDataFactory.CreateFromFile(inputFiles[f], 16, false, ct);
+                if (image.Properties.Width != width || image.Properties.Height != height) {
+                    // Skip frames with mismatched dimensions
+                    continue;
+                }
+
+                var data = image.Data.FlatArray;
+                for (int p = 0; p < pixelCount; p++) {
+                    accumulator[p] += data[p];
+                }
+                frameCount++;
+            }
+
+            // Divide by frame count to get average
+            for (int p = 0; p < pixelCount; p++) {
+                accumulator[p] /= frameCount;
+            }
+
+            return (accumulator, width, height, frameCount);
+        }
+
+        /// <summary>
+        /// Crop the image data to a square inscribed in the largest circle that fits.
+        /// Pixels outside the circle radius are zeroed.
+        /// </summary>
+        public static (double[] data, int newWidth, int newHeight) CropToCircle(
+            double[] data, int width, int height) {
+
+            // Inscribed circle: radius = half of the shorter dimension
+            int minDim = Math.Min(width, height);
+            double radius = minDim / 2.0;
+            double cx = width / 2.0;
+            double cy = height / 2.0;
+
+            // Crop to square around center
+            int cropX = (int)Math.Round(cx - radius);
+            int cropY = (int)Math.Round(cy - radius);
+            int cropSize = (int)Math.Round(radius * 2);
+
+            double[] cropped = new double[cropSize * cropSize];
+            double centerX = cropSize / 2.0;
+            double centerY = cropSize / 2.0;
+            double r2 = radius * radius;
+
+            for (int y = 0; y < cropSize; y++) {
+                for (int x = 0; x < cropSize; x++) {
+                    int srcX = cropX + x;
+                    int srcY = cropY + y;
+
+                    // Zero pixels outside the circle
+                    double dx = x - centerX;
+                    double dy = y - centerY;
+                    if (dx * dx + dy * dy > r2) {
+                        cropped[y * cropSize + x] = 0;
+                    } else if (srcX >= 0 && srcX < width && srcY >= 0 && srcY < height) {
+                        cropped[y * cropSize + x] = data[srcY * width + srcX];
+                    }
+                }
+            }
+
+            return (cropped, cropSize, cropSize);
+        }
+
+        /// <summary>
+        /// Bin 2x2: average each 2x2 pixel block into a single pixel.
+        /// Output is half the dimensions of the input.
+        /// </summary>
+        public static (double[] data, int newWidth, int newHeight) Bin2x2(
+            double[] data, int width, int height) {
+
+            int newWidth = width / 2;
+            int newHeight = height / 2;
+            double[] binned = new double[newWidth * newHeight];
+
+            for (int by = 0; by < newHeight; by++) {
+                for (int bx = 0; bx < newWidth; bx++) {
+                    int sx = bx * 2;
+                    int sy = by * 2;
+                    double sum = data[sy * width + sx]
+                               + data[sy * width + sx + 1]
+                               + data[(sy + 1) * width + sx]
+                               + data[(sy + 1) * width + sx + 1];
+                    binned[by * newWidth + bx] = sum / 4.0;
+                }
+            }
+
+            return (binned, newWidth, newHeight);
+        }
+
+        /// <summary>
+        /// Convert double array to 16-bit unsigned integer array, clamping to valid range.
+        /// </summary>
+        public static ushort[] ToUShort16(double[] data) {
+            ushort[] result = new ushort[data.Length];
+            for (int i = 0; i < data.Length; i++) {
+                result[i] = (ushort)Math.Max(0, Math.Min(65535, Math.Round(data[i])));
+            }
+            return result;
+        }
+    }
+}

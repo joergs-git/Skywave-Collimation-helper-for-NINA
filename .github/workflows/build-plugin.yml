@@ -1,0 +1,40 @@
+name: Build NINA Plugin
+
+on:
+  push:
+    paths:
+      - 'plugin/**'
+    branches: ["main"]
+  pull_request:
+    paths:
+      - 'plugin/**'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: plugin
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore NINA.AstroCircular.SkyWaver.sln
+
+      - name: Build Release
+        run: dotnet build NINA.AstroCircular.SkyWaver.sln --configuration Release --no-restore -p:Platform=x64
+
+      - name: Upload plugin DLL artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: NINA.AstroCircular.SkyWaver
+          path: plugin/NINA.AstroCircular.SkyWaver/bin/x64/Release/NINA.AstroCircular.SkyWaver.dll
+          if-no-files-found: error

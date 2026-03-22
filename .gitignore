@@ -1,0 +1,33 @@
+# OS files
+.DS_Store
+._*
+Thumbs.db
+.Spotlight-V100
+.Trashes
+
+# IDE files
+.idea/
+.vscode/
+*.xcuserdata/
+*.suo
+*.user
+*.sln.docstates
+
+# .NET build output
+plugin/**/bin/
+plugin/**/obj/
+plugin/**/*.dll
+plugin/**/*.pdb
+plugin/**/*.nupkg
+plugin/**/project.assets.json
+
+# NuGet
+*.nupkg
+packages/
+
+# Secrets
+.env
+.env.local
+*.key
+*.pem
+credentials.json
