@@ -392,20 +392,19 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
 
                 // Robust statistics: median and MAD (median absolute deviation)
                 ushort median = samples[samples.Count / 2];
-                double mad = 0;
                 var deviations = new List<double>(samples.Count);
                 foreach (var s in samples) {
                     deviations.Add(Math.Abs(s - median));
                 }
                 deviations.Sort();
-                mad = deviations[deviations.Count / 2] * 1.4826; // scale to sigma
+                double mad = deviations[deviations.Count / 2] * 1.4826; // scale to sigma
 
-                // Auto-stretch: clip at median - 2*sigma, stretch to median + 5*sigma
-                double clipLow = Math.Max(0, median - 2.0 * mad);
-                double clipHigh = Math.Min(65535, median + 5.0 * mad);
+                // Moderate stretch: clip at median - 1*sigma, stretch to median + 8*sigma
+                double clipLow = Math.Max(0, median - 1.0 * mad);
+                double clipHigh = Math.Min(65535, median + 8.0 * mad);
                 double range = Math.Max(1, clipHigh - clipLow);
 
-                // Create 8-bit grayscale bitmap with aggressive stretch
+                // Create 8-bit grayscale bitmap with moderate gamma stretch
                 byte[] bmpData = new byte[tw * th];
                 for (int y = 0; y < th; y++) {
                     for (int x = 0; x < tw; x++) {
@@ -413,8 +412,8 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                         if (srcIdx < pixels.Length) {
                             double normalized = (pixels[srcIdx] - clipLow) / range;
                             normalized = Math.Max(0, Math.Min(1, normalized));
-                            // Apply gamma curve for better visibility (gamma ~0.4)
-                            normalized = Math.Pow(normalized, 0.4);
+                            // Gentle gamma for natural look (0.6 = moderate boost)
+                            normalized = Math.Pow(normalized, 0.6);
                             bmpData[y * tw + x] = (byte)(255.0 * normalized);
                         }
                     }

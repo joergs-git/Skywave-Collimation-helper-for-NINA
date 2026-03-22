@@ -160,14 +160,15 @@
                     </Grid>
                 </Border>
 
-                <!-- Camera Preview -->
+                <!-- Camera Preview — same aspect ratio as sensor map -->
                 <Border Grid.Column="1" BorderBrush="#272d42" BorderThickness="1"
                         Background="#080a10" Margin="2,0,0,0"
-                        Height="{Binding MapHeight}">
+                        Width="{Binding MapWidth}" Height="{Binding MapHeight}"
+                        HorizontalAlignment="Center">
                     <Grid>
-                        <Image Source="{Binding LastCapturedImage}" Stretch="UniformToFill"
+                        <Image Source="{Binding LastCapturedImage}" Stretch="Uniform"
                                HorizontalAlignment="Center" VerticalAlignment="Center"
-                               RenderOptions.BitmapScalingMode="NearestNeighbor" />
+                               RenderOptions.BitmapScalingMode="HighQuality" />
                         <TextBlock Text="Last Capture" FontSize="9" Foreground="#444"
                                    HorizontalAlignment="Left" VerticalAlignment="Top" Margin="4,2" />
                     </Grid>
