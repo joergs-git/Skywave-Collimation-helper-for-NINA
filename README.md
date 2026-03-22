@@ -5,12 +5,13 @@ Automated [SkyWave (SKW)](https://www.innovationsforesight.com/aitelescopecollim
 ## What it does
 
 1. **Select** a bright, isolated star (from 16 built-in presets or manual RA/Dec)
-2. **Plate-solve & center** on the star (in focus)
+2. **Switch to L filter** and **plate-solve & center** on the star (in focus)
 3. **Defocus** by a configurable number of focuser steps
-4. **Capture** exposures at N positions around a circular ring pattern
-5. **Integrate** sub-frames natively (average, crop-to-circle, bin 2x)
-6. **Save** a 16-bit monochrome FITS to your SkyWave watch folder
-7. **Refocus** — always returns the focuser, even on failure
+4. **Switch to target filter** (e.g. R) for capture
+5. **Capture** exposures at N positions around a circular ring pattern
+6. **Integrate** sub-frames natively (simple average, optional square crop, optional bin 2x)
+7. **Save** a 16-bit monochrome FITS to your configured output folder
+8. **Refocus** — always returns the focuser, even on failure
 
 <img width="1182" height="719" alt="SKW Collimation Coordinator" src="https://github.com/joergs-git/astrocircular-skywaver-for-nina/blob/main/astrocirular-skw-nina-helper.png" />
 
@@ -26,21 +27,32 @@ A standalone browser-based tool that generates N.I.N.A. sequence files and PixIn
 - Star finder with altitude/LST calculator
 - Magnitude advisor based on your optical setup
 
-### NINA Plugin (in development)
+### NINA Plugin — SkyWave Collimator Helper
 
 A native N.I.N.A. plugin that does everything inside NINA — no external tools required:
 
-- **Sequence instructions:** `SKW Defocus`, `SKW Circular Capture`, `SKW Integrate Frames`
-- **One-click container:** `SKW Collimation Run` chains the full workflow
-- **Native integration:** averages sub-frames, crops, bins 2x — no PixInsight needed
-- **Settings page** for telescope, sensor, observer location, imaging defaults
-- **16 star presets** covering all seasons for mid-northern latitudes
+- **Dockable tool panel** in NINA's imaging tab — click "Run Collimation" and it does everything
+- **Star picker** with 16 presets and "Find Best" auto-selection based on time and location
+- **Live sensor map** showing ring positions with progress (grey=pending, red=active, green=done)
+- **Camera preview** of each captured frame with auto-stretch
+- **Native FITS integration** — simple pixel average, no alignment, no rejection, no normalization
+- **All settings persist** between NINA sessions
+- **Slow mode** for inaccurate mounts — plate-solves every position
 
-#### Installation (plugin)
+#### Installation
 
-1. Download `NINA.AstroCircular.SkyWaver.dll` from [Releases](https://github.com/joergs-git/astrocircular-skywaver-for-nina/releases)
-2. Copy to `%localappdata%\NINA\Plugins\AstroCircular.SkyWaver\`
-3. Restart N.I.N.A. — the plugin appears in Options > Plugins
+1. Download the zip from [Releases](https://github.com/joergs-git/astrocircular-skywaver-for-nina/releases)
+2. Unzip and double-click `install.bat` (close NINA first)
+3. Restart N.I.N.A. — find **SkyWave Collimator Helper** in the tool panels
+
+#### Usage
+
+1. Open the **SkyWave Collimator Helper** panel (imaging tab, tool windows)
+2. Select a star from the presets or enter RA/Dec manually
+3. Set defocus steps, exposure time, filter, gain, positions, radius
+4. Set the output folder via the `...` browse button
+5. Click **Run Collimation**
+6. The integrated FITS appears in your output folder, ready for SkyWave
 
 ## Star presets
 
@@ -60,6 +72,9 @@ See the full list of 16 presets in the [web tool](https://joergs-git.github.io/a
 - **Camera rotation:** Set your camera to 0° or 180° rotation to avoid confusion with mirrored orientation in the integrated image. Since we capture in a circle, rotation doesn't affect collimation quality — it just makes visual interpretation easier.
 - **Center position first:** The plugin always captures the center star position first (if enabled), then the ring positions. This matches SkyWave's expectation for field-dependent analysis.
 - **Slow mode:** Enable this if your mount is not accurate enough for blind slewing. In slow mode, the plugin refocuses and plate-solves at every single ring position — much slower but ensures precise positioning. The workflow per position is: refocus → L filter → slew & center (plate-solve) → defocus → target filter → expose. Default is off (blind slew after initial centering).
+- **Integration:** The integration is a simple pixel-by-pixel average — no alignment, no rejection, no normalization, no weighting. This is by design: each frame shows the defocused star at a different field position, and SkyWave needs the raw combined pattern.
+- **Output format:** Always 16-bit unsigned FITS with proper headers (FOCALLEN, XPIXSZ, XBINNING, etc.). Never XISF — regardless of NINA's default format setting.
+- **Sub-frames:** When "Auto-delete subs" is off, individual frames are kept in a `subframes_*` subfolder inside your output directory.
 
 ## Requirements
 
@@ -67,6 +82,7 @@ See the full list of 16 presets in the [web tool](https://joergs-git.github.io/a
 - GoTo mount with slew capability
 - Electronic focuser
 - Camera with FITS output
+- Filter wheel (optional — for L filter plate-solving and target filter capture)
 - [SkyWave Collimator](https://www.innovationsforesight.com/aitelescopecollimation/) for wavefront analysis
 
 ## License
