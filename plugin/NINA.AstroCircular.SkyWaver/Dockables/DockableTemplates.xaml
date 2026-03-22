@@ -161,17 +161,15 @@
                 </Border>
 
                 <!-- Camera Preview -->
-                <Border Grid.Column="1" BorderBrush="#272d42" BorderThickness="1" CornerRadius="3"
-                        Background="#080a10" Margin="2,0,0,0" MinHeight="200">
+                <Border Grid.Column="1" BorderBrush="#272d42" BorderThickness="1"
+                        Background="#080a10" Margin="2,0,0,0"
+                        Height="{Binding MapHeight}">
                     <Grid>
-                        <Image Source="{Binding LastCapturedImage}" Stretch="Uniform"
-                               HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        <TextBlock Text="Preview" FontSize="9" Foreground="#444"
+                        <Image Source="{Binding LastCapturedImage}" Stretch="UniformToFill"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               RenderOptions.BitmapScalingMode="NearestNeighbor" />
+                        <TextBlock Text="Last Capture" FontSize="9" Foreground="#444"
                                    HorizontalAlignment="Left" VerticalAlignment="Top" Margin="4,2" />
-                        <!-- Placeholder when no image -->
-                        <TextBlock Text="No image yet" FontSize="11" Foreground="#333"
-                                   HorizontalAlignment="Center" VerticalAlignment="Center"
-                                   Visibility="{Binding LastCapturedImage, Converter={StaticResource NullToVisibilityConverter}}" />
                     </Grid>
                 </Border>
             </Grid>

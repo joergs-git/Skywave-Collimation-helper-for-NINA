@@ -367,7 +367,8 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
         }
 
         /// <summary>
-        /// Create a quick thumbnail from image data for the preview panel.
+        /// Create a stretched thumbnail from image data for the preview panel.
+        /// Uses midtone transfer function (MTF) similar to NINA's auto-stretch.
         /// </summary>
         private void UpdatePreviewImage(NINA.Image.Interfaces.IImageData imageData) {
             try {
@@ -376,26 +377,45 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                 int w = imageData.Properties.Width;
                 int h = imageData.Properties.Height;
 
-                // Downsample to thumbnail (max 200px wide)
-                int scale = Math.Max(1, w / 200);
+                // Downsample to thumbnail (max 400px wide for crisp preview)
+                int scale = Math.Max(1, w / 400);
                 int tw = w / scale;
                 int th = h / scale;
 
-                // Find min/max for auto-stretch
-                ushort min = ushort.MaxValue, max = 0;
-                for (int i = 0; i < pixels.Length; i += scale * 10) {
-                    if (pixels[i] < min) min = pixels[i];
-                    if (pixels[i] > max) max = pixels[i];
+                // Sample pixels for statistics (every Nth pixel for speed)
+                int sampleStep = Math.Max(1, pixels.Length / 10000);
+                var samples = new List<ushort>(10000);
+                for (int i = 0; i < pixels.Length; i += sampleStep) {
+                    samples.Add(pixels[i]);
                 }
-                double range = Math.Max(1, max - min);
+                samples.Sort();
 
-                // Create 8-bit grayscale bitmap
+                // Robust statistics: median and MAD (median absolute deviation)
+                ushort median = samples[samples.Count / 2];
+                double mad = 0;
+                var deviations = new List<double>(samples.Count);
+                foreach (var s in samples) {
+                    deviations.Add(Math.Abs(s - median));
+                }
+                deviations.Sort();
+                mad = deviations[deviations.Count / 2] * 1.4826; // scale to sigma
+
+                // Auto-stretch: clip at median - 2*sigma, stretch to median + 5*sigma
+                double clipLow = Math.Max(0, median - 2.0 * mad);
+                double clipHigh = Math.Min(65535, median + 5.0 * mad);
+                double range = Math.Max(1, clipHigh - clipLow);
+
+                // Create 8-bit grayscale bitmap with aggressive stretch
                 byte[] bmpData = new byte[tw * th];
                 for (int y = 0; y < th; y++) {
                     for (int x = 0; x < tw; x++) {
                         int srcIdx = (y * scale) * w + (x * scale);
                         if (srcIdx < pixels.Length) {
-                            bmpData[y * tw + x] = (byte)(255.0 * (pixels[srcIdx] - min) / range);
+                            double normalized = (pixels[srcIdx] - clipLow) / range;
+                            normalized = Math.Max(0, Math.Min(1, normalized));
+                            // Apply gamma curve for better visibility (gamma ~0.4)
+                            normalized = Math.Pow(normalized, 0.4);
+                            bmpData[y * tw + x] = (byte)(255.0 * normalized);
                         }
                     }
                 }
@@ -511,10 +531,29 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                     ? cameraMediator.GetInfo().YSize * profileService.ActiveProfile.CameraSettings.PixelSize / 1000.0
                     : 24.0;
 
-                // Step 1: Switch filter
+                // Step 1: Switch filter — find the filter by name from the NINA profile
                 StatusText = $"Switching to filter {FilterName}...";
                 Progress = 5;
-                await filterWheelMediator.ChangeFilter(new FilterInfo(FilterName, 0, (short)0), ct);
+                try {
+                    var profileFilters = profileService?.ActiveProfile?.FilterWheelSettings?.FilterWheelFilters;
+                    FilterInfo targetFilter = null;
+                    if (profileFilters != null) {
+                        foreach (var f in profileFilters) {
+                            if (f.Name.Equals(FilterName, StringComparison.OrdinalIgnoreCase)) {
+                                targetFilter = f;
+                                break;
+                            }
+                        }
+                    }
+                    if (targetFilter == null) {
+                        // Fallback: create a FilterInfo and let NINA try to match by name
+                        targetFilter = new FilterInfo(FilterName, 0, (short)-1);
+                    }
+                    await filterWheelMediator.ChangeFilter(targetFilter, ct);
+                } catch (Exception filterEx) {
+                    Logger.Warning($"SKW: Filter switch failed ({filterEx.Message}), continuing with current filter");
+                    StatusText = $"Filter switch failed, continuing...";
+                }
 
                 // Step 2: Slew & Center on target star (plate-solve, in focus)
                 StatusText = $"Centering on {StarName} (slew + plate-solve)...";
