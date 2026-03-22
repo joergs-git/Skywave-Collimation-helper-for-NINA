@@ -32,9 +32,36 @@ jobs:
       - name: Build Release
         run: dotnet build NINA.AstroCircular.SkyWaver.sln --configuration Release --no-restore -p:Platform=x64
 
-      - name: Upload plugin DLL artifact
+      - name: Package installer zip
+        shell: pwsh
+        run: |
+          $stagingDir = "staging/AstroCircular.SkyWaver"
+          New-Item -ItemType Directory -Force -Path $stagingDir
+          Copy-Item "NINA.AstroCircular.SkyWaver/bin/x64/Release/NINA.AstroCircular.SkyWaver.dll" $stagingDir
+          Copy-Item "install.bat" $stagingDir/../
+          Copy-Item "uninstall.bat" $stagingDir/../
+          # Include a README in the zip
+          @"
+          AstroCircular SkyWaver for N.I.N.A. — v0.1.0
+          ==============================================
+
+          INSTALL:  Double-click install.bat (closes NINA first!)
+          MANUAL:   Copy the AstroCircular.SkyWaver folder to
+                    %localappdata%\NINA\3\Plugins\
+
+          UNINSTALL: Double-click uninstall.bat
+
+          After installing, restart N.I.N.A. and find the plugin
+          in Options > Plugins and the sequence instructions
+          under the "AstroCircular SKW" category.
+
+          https://github.com/joergs-git/astrocircular-skywaver-for-nina
+          "@ | Out-File -Encoding utf8 "staging/README.txt"
+          Compress-Archive -Path "staging/*" -DestinationPath "AstroCircular.SkyWaver-v0.1.0.zip" -Force
+
+      - name: Upload installer zip
         uses: actions/upload-artifact@v4
         with:
-          name: NINA.AstroCircular.SkyWaver
-          path: plugin/NINA.AstroCircular.SkyWaver/bin/x64/Release/NINA.AstroCircular.SkyWaver.dll
+          name: AstroCircular.SkyWaver-v0.1.0
+          path: plugin/AstroCircular.SkyWaver-v0.1.0.zip
           if-no-files-found: error
