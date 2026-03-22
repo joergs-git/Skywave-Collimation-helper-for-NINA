@@ -677,10 +677,30 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
 
                 // Step 5: Integrate
                 Progress = 85;
-                StatusText = $"Integrating {capturedFiles.Count} frames...";
+
+                // Verify captured files exist (NINA may adjust filenames/extensions)
+                var existingFiles = capturedFiles.Where(f => File.Exists(f)).ToList();
+
+                // If SaveToDisk returned paths that don't exist, scan the temp dir for FITS/XISF
+                if (existingFiles.Count == 0 && Directory.Exists(tempDir)) {
+                    existingFiles = Directory.GetFiles(tempDir, "*.*")
+                        .Where(f => f.EndsWith(".fits", StringComparison.OrdinalIgnoreCase)
+                                 || f.EndsWith(".fit", StringComparison.OrdinalIgnoreCase)
+                                 || f.EndsWith(".xisf", StringComparison.OrdinalIgnoreCase))
+                        .OrderBy(f => f).ToList();
+                }
+
+                if (existingFiles.Count < 2) {
+                    StatusText = $"Error: Only {existingFiles.Count} files found for integration. Check temp dir: {tempDir}";
+                    Logger.Warning($"SKW: Integration aborted — only {existingFiles.Count} files in {tempDir}. CapturedFiles: {string.Join(", ", capturedFiles)}");
+                    return false;
+                }
+
+                StatusText = $"Integrating {existingFiles.Count} frames...";
+                Logger.Info($"SKW: Integrating {existingFiles.Count} files from {tempDir}");
 
                 var (averaged, width, height, frameCount) = await FitsAverager.Average(
-                    capturedFiles, imageDataFactory, ct);
+                    existingFiles, imageDataFactory, ct);
 
                 if (CropToCircle) {
                     (averaged, width, height) = FitsAverager.CropToCircle(averaged, width, height);
@@ -701,6 +721,7 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                 string outputPath = Path.Combine(outputDir, outputFile);
 
                 RawFitsWriter.Write(outputPath, pixelData, width, height, headers);
+                Logger.Info($"SKW: Integrated FITS saved to {outputPath} ({width}x{height}, {frameCount} frames)");
 
                 Progress = 95;
                 StatusText = $"Saved: {outputPath}";
@@ -708,7 +729,7 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                 // Cleanup sub-frames
                 if (AutoCleanSubFrames) {
                     try {
-                        foreach (var f in capturedFiles) {
+                        foreach (var f in existingFiles) {
                             if (File.Exists(f)) File.Delete(f);
                         }
                         if (Directory.Exists(tempDir) && !Directory.EnumerateFileSystemEntries(tempDir).Any()) {

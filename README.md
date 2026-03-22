@@ -55,6 +55,11 @@ A native N.I.N.A. plugin that does everything inside NINA — no external tools 
 
 See the full list of 16 presets in the [web tool](https://joergs-git.github.io/astrocircular-skywaver-for-nina/).
 
+## Tips
+
+- **Camera rotation:** Set your camera to 0° or 180° rotation to avoid confusion with mirrored orientation in the integrated image. Since we capture in a circle, rotation doesn't affect collimation quality — it just makes visual interpretation easier.
+- **Center position first:** The plugin always captures the center star position first (if enabled), then the ring positions. This matches SkyWave's expectation for field-dependent analysis.
+
 ## Requirements
 
 - **N.I.N.A. 3.0+** (.NET 8.0)
