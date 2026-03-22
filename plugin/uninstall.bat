@@ -16,18 +16,28 @@ if not errorlevel 1 (
     exit /b 1
 )
 
-set "NINA_DIR=%localappdata%\NINA\3\Plugins\AstroCircular.SkyWaver"
-if not exist "%NINA_DIR%" (
+:: Try all known paths
+set "FOUND="
+
+if exist "%localappdata%\NINA\3\Plugins\AstroCircular.SkyWaver" (
+    set "NINA_DIR=%localappdata%\NINA\3\Plugins\AstroCircular.SkyWaver"
+    set "FOUND=1"
+)
+if exist "%localappdata%\NINA\Plugins\AstroCircular.SkyWaver" (
     set "NINA_DIR=%localappdata%\NINA\Plugins\AstroCircular.SkyWaver"
+    set "FOUND=1"
 )
 
-if exist "%NINA_DIR%" (
-    echo  Removing: %NINA_DIR%
-    rmdir /S /Q "%NINA_DIR%"
+if not defined FOUND (
+    echo  Plugin not found in default locations. Nothing to remove.
     echo.
-    echo  [OK] AstroCircular SkyWaver uninstalled.
-) else (
-    echo  Plugin not found. Nothing to remove.
+    pause
+    exit /b 0
 )
+
+echo  Removing: %NINA_DIR%
+rmdir /S /Q "%NINA_DIR%"
+echo.
+echo  [OK] AstroCircular SkyWaver uninstalled.
 echo.
 pause
