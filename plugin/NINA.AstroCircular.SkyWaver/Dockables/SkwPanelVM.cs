@@ -153,7 +153,13 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
         private int defocusDirection = 1;
         public int DefocusDirection {
             get => defocusDirection;
-            set { defocusDirection = value; RaisePropertyChanged(); SaveSettings(); }
+            set { defocusDirection = value; RaisePropertyChanged(); RaisePropertyChanged(nameof(DefocusDirectionIndex)); SaveSettings(); }
+        }
+
+        /// <summary>ComboBox index: 0 = Extra-focal (+1), 1 = Intra-focal (-1)</summary>
+        public int DefocusDirectionIndex {
+            get => DefocusDirection == 1 ? 0 : 1;
+            set { DefocusDirection = value == 0 ? 1 : -1; }
         }
 
         // ── Imaging ──
@@ -518,15 +524,22 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                     Angle.ByDegree(CoordinateUtils.ParseDMS(TargetDec)),
                     Epoch.J2000);
 
-                // Use NINA's built-in Center instruction for plate-solve centering
-                var centerInstruction = new Center(
-                    profileService, telescopeMediator, imagingMediator, filterWheelMediator,
-                    guiderMediator, domeMediator, domeFollower,
-                    new PlateSolverFactoryProxy(), new NINA.Core.Utility.WindowService.WindowServiceFactory()
-                ) {
-                    Coordinates = new NINA.Astrometry.InputCoordinates(coords)
-                };
-                await centerInstruction.Execute(progressReporter, ct);
+                // Try plate-solve centering, fall back to blind slew if it fails
+                try {
+                    var centerInstruction = new Center(
+                        profileService, telescopeMediator, imagingMediator, filterWheelMediator,
+                        guiderMediator, domeMediator, domeFollower,
+                        new PlateSolverFactoryProxy(), new NINA.Core.Utility.WindowService.WindowServiceFactory()
+                    ) {
+                        Coordinates = new NINA.Astrometry.InputCoordinates(coords)
+                    };
+                    await centerInstruction.Execute(progressReporter, ct);
+                    StatusText = $"Centered on {StarName} successfully";
+                } catch (Exception psEx) {
+                    Logger.Warning($"SKW: Plate-solve centering failed ({psEx.Message}), falling back to blind slew");
+                    StatusText = $"Plate-solve failed, slewing blind to {StarName}...";
+                    await telescopeMediator.SlewToCoordinatesAsync(coords, ct);
+                }
 
                 // Step 3: Defocus
                 StatusText = $"Defocusing {(relativeDefocus > 0 ? "+" : "")}{relativeDefocus} steps...";

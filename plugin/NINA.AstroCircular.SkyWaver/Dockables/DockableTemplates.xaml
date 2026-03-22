@@ -52,9 +52,9 @@
                 <TextBlock Grid.Row="0" Grid.Column="0" Text="Defocus" VerticalAlignment="Center" FontSize="11" />
                 <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding DefocusSteps, UpdateSourceTrigger=PropertyChanged}" Margin="2,1" FontSize="11" />
                 <TextBlock Grid.Row="0" Grid.Column="2" Text="Dir" VerticalAlignment="Center" FontSize="11" Margin="4,0,0,0" />
-                <ComboBox Grid.Row="0" Grid.Column="3" SelectedValue="{Binding DefocusDirection}" Margin="2,1" FontSize="11">
-                    <ComboBoxItem Content="Extra +" Tag="1" />
-                    <ComboBoxItem Content="Intra -" Tag="-1" />
+                <ComboBox Grid.Row="0" Grid.Column="3" SelectedIndex="{Binding DefocusDirectionIndex}" Margin="2,1" FontSize="11">
+                    <ComboBoxItem Content="Extra-focal (+)" />
+                    <ComboBoxItem Content="Intra-focal (-)" />
                 </ComboBox>
                 <TextBlock Grid.Row="0" Grid.Column="4" Text="Exp s" VerticalAlignment="Center" FontSize="11" Margin="4,0,0,0" />
                 <TextBox Grid.Row="0" Grid.Column="5" Text="{Binding ExposureTime, UpdateSourceTrigger=PropertyChanged}" Margin="2,1" FontSize="11" />
