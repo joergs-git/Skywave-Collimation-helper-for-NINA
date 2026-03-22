@@ -550,8 +550,9 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
 
             int originalFocuserPos = focuserMediator.GetInfo().Position;
             int relativeDefocus = DefocusSteps * DefocusDirection;
-            string tempDir = Path.Combine(Path.GetTempPath(), "NINA", "AstroCircular_SKW",
-                DateTime.Now.ToString("yyyyMMdd_HHmmss"));
+            string outputDir = SkyWaveOutputDirectory;
+            string sessionId = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            string subFrameDir = Path.Combine(outputDir, "subframes_" + sessionId);
 
             try {
                 // Get equipment params for FOV calculation
@@ -610,14 +611,14 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                     centerRA, centerDec, fovW, fovH,
                     RingPositions, RadiusPercent, true, IncludeCenter);
 
-                Directory.CreateDirectory(tempDir);
+                Directory.CreateDirectory(subFrameDir);
                 var capturedFiles = new List<string>();
                 int total = positions.Count;
 
                 // Build the visual map
                 BuildMapPositions();
 
-                Logger.Info($"SKW: Starting capture loop — {total} positions, slowMode={SlowMode}, tempDir={tempDir}");
+                Logger.Info($"SKW: Starting capture loop — {total} positions, slowMode={SlowMode}, subFrameDir={subFrameDir}");
 
                 for (int i = 0; i < total; i++) {
                     ct.ThrowIfCancellationRequested();
@@ -705,7 +706,7 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
 
                                 // Save directly as FITS — don't rely on NINA's file pattern
                                 string posLabel = pos.Label.Replace(" ", "");
-                                string fitsPath = Path.Combine(tempDir, $"SKW_{posLabel}_{i:D2}.fits");
+                                string fitsPath = Path.Combine(subFrameDir, $"SKW_{posLabel}_{i:D2}.fits");
                                 try {
                                     // Write FITS directly using our own writer
                                     var px = imageData.Data.FlatArray;
@@ -743,8 +744,8 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                 var existingFiles = capturedFiles.Where(f => File.Exists(f)).ToList();
 
                 // If SaveToDisk returned paths that don't exist, scan the temp dir for FITS/XISF
-                if (existingFiles.Count == 0 && Directory.Exists(tempDir)) {
-                    existingFiles = Directory.GetFiles(tempDir, "*.*")
+                if (existingFiles.Count == 0 && Directory.Exists(subFrameDir)) {
+                    existingFiles = Directory.GetFiles(subFrameDir, "*.*")
                         .Where(f => f.EndsWith(".fits", StringComparison.OrdinalIgnoreCase)
                                  || f.EndsWith(".fit", StringComparison.OrdinalIgnoreCase)
                                  || f.EndsWith(".xisf", StringComparison.OrdinalIgnoreCase))
@@ -752,8 +753,8 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                 }
 
                 if (existingFiles.Count < 2) {
-                    StatusText = $"Error: Only {existingFiles.Count} files found for integration. Check temp dir: {tempDir}";
-                    Logger.Warning($"SKW: Integration aborted — only {existingFiles.Count} files in {tempDir}. CapturedFiles: {string.Join(", ", capturedFiles)}");
+                    StatusText = $"Error: Only {existingFiles.Count} files found for integration. Check temp dir: {subFrameDir}";
+                    Logger.Warning($"SKW: Integration aborted — only {existingFiles.Count} files in {subFrameDir}. CapturedFiles: {string.Join(", ", capturedFiles)}");
                     return false;
                 }
 
@@ -800,10 +801,9 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                 var headers = FitsHeaderWriter.BuildHeaders(
                     fl, pixelSize, Binning, BinToHalf, ExposureTime, -999, FilterName);
 
-                // Always use the SkyWave output directory (defaults to Desktop/SKW_Output if not set)
-                string outputDir = SkyWaveOutputDirectory;
+                // Save integrated FITS directly in the output folder
                 Directory.CreateDirectory(outputDir);
-                string outputFile = $"SKW_Collimation_{DateTime.Now:yyyyMMdd_HHmmss}.fits";
+                string outputFile = $"SKW_Collimation_{sessionId}.fits";
                 string outputPath = Path.Combine(outputDir, outputFile);
 
                 RawFitsWriter.Write(outputPath, pixelData, width, height, headers);
@@ -818,8 +818,8 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                         foreach (var f in existingFiles) {
                             if (File.Exists(f)) File.Delete(f);
                         }
-                        if (Directory.Exists(tempDir) && !Directory.EnumerateFileSystemEntries(tempDir).Any()) {
-                            Directory.Delete(tempDir);
+                        if (Directory.Exists(subFrameDir) && !Directory.EnumerateFileSystemEntries(subFrameDir).Any()) {
+                            Directory.Delete(subFrameDir);
                         }
                     } catch { }
                 }

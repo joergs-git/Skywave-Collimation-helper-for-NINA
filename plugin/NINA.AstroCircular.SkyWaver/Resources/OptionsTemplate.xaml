@@ -5,21 +5,9 @@
     <DataTemplate x:Key="AstroCircular SkyWaver_Options">
         <StackPanel Orientation="Vertical" MaxWidth="640" Margin="5">
 
-            <!-- SkyWave Output Folder with browse button -->
-            <GroupBox Header="SkyWave Output Folder" Margin="0,0,0,6" BorderBrush="#3a5" BorderThickness="1.5">
-                <StackPanel Margin="6,3">
-                    <TextBlock Text="Folder that SkyWave watches for new FITS files." Foreground="#999" FontSize="10" Margin="0,0,0,2" />
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <TextBox Grid.Column="0" Text="{Binding Settings.SkyWaveOutputDirectory, UpdateSourceTrigger=PropertyChanged}" />
-                        <Button Grid.Column="1" Content=" Browse... " Margin="4,0,0,0" Padding="8,2"
-                                Command="{Binding BrowseFolderCommand}" />
-                    </Grid>
-                </StackPanel>
-            </GroupBox>
+            <!-- Note about output folder -->
+            <TextBlock Text="Output folder and slow mode are configured in the SKW Collimation panel (Imaging tab)."
+                       Foreground="#888" FontSize="10" Margin="0,0,0,6" FontStyle="Italic" />
 
             <!-- Post-Capture Integration -->
             <GroupBox Header="Post-Capture Integration" Margin="0,0,0,4">

@@ -74,10 +74,24 @@
                 <TextBox Grid.Row="2" Grid.Column="5" Text="{Binding SettleSeconds, UpdateSourceTrigger=PropertyChanged}" Margin="2,1" FontSize="11" />
             </Grid>
 
+            <!-- SkyWave Output Folder -->
+            <Grid Margin="0,0,0,4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="Output:" VerticalAlignment="Center" FontSize="11" Margin="0,0,4,0" />
+                <TextBox Grid.Column="1" Text="{Binding SkyWaveOutputDirectory, UpdateSourceTrigger=PropertyChanged}"
+                         FontSize="10" ToolTip="SkyWave watch folder — integrated FITS saved here" />
+                <Button Grid.Column="2" Content=" ... " Command="{Binding BrowseFolderCommand}"
+                        Padding="6,1" Margin="2,0,0,0" ToolTip="Browse for output folder" />
+            </Grid>
+
             <!-- Slow Mode toggle -->
             <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                 <CheckBox IsChecked="{Binding SlowMode}" VerticalAlignment="Center" />
-                <TextBlock Text="Slow mode (plate-solve every position — for inaccurate mounts)"
+                <TextBlock Text="Slow mode (plate-solve every position)"
                            Margin="6,0,0,0" VerticalAlignment="Center" FontSize="10" Foreground="#999" />
             </StackPanel>
 
