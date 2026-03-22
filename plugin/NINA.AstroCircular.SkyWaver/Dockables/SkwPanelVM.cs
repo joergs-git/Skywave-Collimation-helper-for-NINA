@@ -220,6 +220,14 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
             set { includeCenter = value; RaisePropertyChanged(); SaveSettings(); RebuildMap(); }
         }
 
+        // ── Slow Mode (plate-solve every position) ──
+
+        private bool slowMode = false;
+        public bool SlowMode {
+            get => slowMode;
+            set { slowMode = value; RaisePropertyChanged(); SaveSettings(); }
+        }
+
         // ── Integration ──
 
         private bool cropToCircle = true;
@@ -609,6 +617,8 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                 // Build the visual map
                 BuildMapPositions();
 
+                Logger.Info($"SKW: Starting capture loop — {total} positions, slowMode={SlowMode}, tempDir={tempDir}");
+
                 for (int i = 0; i < total; i++) {
                     ct.ThrowIfCancellationRequested();
                     var pos = positions[i];
@@ -616,24 +626,57 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                     int pctRange = 60;
                     Progress = pctBase + (i * pctRange / total);
 
-                    // Update map: mark current position active
-                    if (i < MapPositions.Count) {
-                        MapPositions[i].State = PositionState.Active;
-                    }
+                    // Update map
+                    if (i < MapPositions.Count) MapPositions[i].State = PositionState.Active;
                     ProgressText = $"{i} / {total} positions";
 
-                    // Blind slew (no plate-solve — telescope is defocused)
-                    StatusText = $"Slewing to {pos.Label} ({i + 1}/{total})...";
-                    try {
-                        var posCoords = new Coordinates(
-                            Angle.ByHours(pos.RAHours),
-                            Angle.ByDegree(pos.DecDegrees),
-                            Epoch.J2000);
-                        await telescopeMediator.SlewToCoordinatesAsync(posCoords, ct);
-                    } catch {
-                        StatusText = $"Slew to {pos.Label} failed, skipping...";
-                        if (i < MapPositions.Count) MapPositions[i].State = PositionState.Failed;
-                        continue;
+                    var posCoords = new Coordinates(
+                        Angle.ByHours(pos.RAHours),
+                        Angle.ByDegree(pos.DecDegrees),
+                        Epoch.J2000);
+
+                    if (SlowMode) {
+                        // SLOW MODE: refocus → L filter → slew & center → defocus → target filter → expose
+                        try {
+                            StatusText = $"Slow: Refocusing for {pos.Label} ({i + 1}/{total})...";
+                            await focuserMediator.MoveFocuserRelative(-relativeDefocus, ct);
+
+                            StatusText = $"Slow: L filter for plate-solve...";
+                            await SwitchFilter("L", ct);
+
+                            StatusText = $"Slow: Centering on {pos.Label} (plate-solve)...";
+                            try {
+                                var centerInst = new Center(
+                                    profileService, telescopeMediator, imagingMediator, filterWheelMediator,
+                                    guiderMediator, domeMediator, domeFollower,
+                                    new PlateSolverFactoryProxy(), new NINA.Core.Utility.WindowService.WindowServiceFactory()
+                                ) { Coordinates = new NINA.Astrometry.InputCoordinates(posCoords) };
+                                await centerInst.Execute(progressReporter, ct);
+                            } catch {
+                                StatusText = $"Slow: Plate-solve failed, blind slew to {pos.Label}...";
+                                await telescopeMediator.SlewToCoordinatesAsync(posCoords, ct);
+                            }
+
+                            StatusText = $"Slow: Defocusing...";
+                            await focuserMediator.MoveFocuserRelative(relativeDefocus, ct);
+
+                            StatusText = $"Slow: Switching to {FilterName}...";
+                            await SwitchFilter(FilterName, ct);
+                        } catch (Exception ex) {
+                            Logger.Warning($"SKW: Slow-mode prep for {pos.Label} failed: {ex.Message}");
+                            if (i < MapPositions.Count) MapPositions[i].State = PositionState.Failed;
+                            continue;
+                        }
+                    } else {
+                        // NORMAL MODE: blind slew (telescope is defocused)
+                        StatusText = $"Slewing to {pos.Label} ({i + 1}/{total})...";
+                        try {
+                            await telescopeMediator.SlewToCoordinatesAsync(posCoords, ct);
+                        } catch {
+                            StatusText = $"Slew to {pos.Label} failed, skipping...";
+                            if (i < MapPositions.Count) MapPositions[i].State = PositionState.Failed;
+                            continue;
+                        }
                     }
 
                     // Settle
@@ -641,7 +684,7 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                         await Task.Delay(TimeSpan.FromSeconds(SettleSeconds), ct);
                     }
 
-                    // Capture
+                    // Capture and save
                     StatusText = $"Exposing {ExposureTime}s at {pos.Label} ({i + 1}/{total})...";
                     try {
                         var captureSeq = new CaptureSequence(
@@ -658,20 +701,29 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                         if (exposureData != null) {
                             var imageData = await exposureData.ToImageData(progressReporter, ct);
                             if (imageData != null) {
-                                // Update live preview
                                 UpdatePreviewImage(imageData);
+
+                                // Save directly as FITS — don't rely on NINA's file pattern
                                 string posLabel = pos.Label.Replace(" ", "");
-                                var fileSaveInfo = new FileSaveInfo(profileService) {
-                                    FilePath = tempDir,
-                                    FilePattern = $"SKW_{posLabel}_{i:D2}",
-                                    FileType = NINA.Core.Enum.FileTypeEnum.FITS
-                                };
-                                string savedPath = await imageData.SaveToDisk(fileSaveInfo, ct);
-                                if (!string.IsNullOrEmpty(savedPath)) {
-                                    capturedFiles.Add(savedPath);
+                                string fitsPath = Path.Combine(tempDir, $"SKW_{posLabel}_{i:D2}.fits");
+                                try {
+                                    // Write FITS directly using our own writer
+                                    var px = imageData.Data.FlatArray;
+                                    int imgW = imageData.Properties.Width;
+                                    int imgH = imageData.Properties.Height;
+                                    RawFitsWriter.Write(fitsPath, px, imgW, imgH, null);
+                                    capturedFiles.Add(fitsPath);
+                                    Logger.Info($"SKW: Saved sub-frame {fitsPath} ({imgW}x{imgH})");
                                     if (i < MapPositions.Count) MapPositions[i].State = PositionState.Done;
+                                } catch (Exception writeEx) {
+                                    Logger.Error($"SKW: Failed to write sub-frame {fitsPath}: {writeEx.Message}");
+                                    if (i < MapPositions.Count) MapPositions[i].State = PositionState.Failed;
                                 }
+                            } else {
+                                Logger.Warning($"SKW: ToImageData returned null for {pos.Label}");
                             }
+                        } else {
+                            Logger.Warning($"SKW: CaptureImage returned null for {pos.Label}");
                         }
                     } catch (Exception ex) {
                         Logger.Warning($"SKW: Capture at {pos.Label} failed: {ex.Message}");
@@ -706,10 +758,34 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                 }
 
                 StatusText = $"Integrating {existingFiles.Count} frames...";
-                Logger.Info($"SKW: Integrating {existingFiles.Count} files from {tempDir}");
+                Logger.Info($"SKW: Integrating {existingFiles.Count} files: {string.Join(", ", existingFiles.Select(Path.GetFileName))}");
 
-                var (averaged, width, height, frameCount) = await FitsAverager.Average(
-                    existingFiles, imageDataFactory, ct);
+                // Read and average using our own FITS reader (avoids NINA pipeline issues)
+                var firstImg = RawFitsReader.Read(existingFiles[0]);
+                int width = firstImg.Width;
+                int height = firstImg.Height;
+                int pixelCount = width * height;
+                double[] accumulated = new double[pixelCount];
+                for (int p = 0; p < pixelCount; p++) accumulated[p] = firstImg.Pixels[p];
+
+                int frameCount = 1;
+                for (int f = 1; f < existingFiles.Count; f++) {
+                    ct.ThrowIfCancellationRequested();
+                    try {
+                        var img = RawFitsReader.Read(existingFiles[f]);
+                        if (img.Width == width && img.Height == height) {
+                            for (int p = 0; p < pixelCount; p++) accumulated[p] += img.Pixels[p];
+                            frameCount++;
+                        } else {
+                            Logger.Warning($"SKW: Skipping {existingFiles[f]} — size mismatch ({img.Width}x{img.Height} vs {width}x{height})");
+                        }
+                    } catch (Exception readEx) {
+                        Logger.Warning($"SKW: Failed to read {existingFiles[f]}: {readEx.Message}");
+                    }
+                }
+                for (int p = 0; p < pixelCount; p++) accumulated[p] /= frameCount;
+                var averaged = accumulated;
+                Logger.Info($"SKW: Averaged {frameCount} frames ({width}x{height})");
 
                 if (CropToCircle) {
                     (averaged, width, height) = FitsAverager.CropToCircle(averaged, width, height);
@@ -799,6 +875,7 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                 accessor.SetValueBoolean(SETTINGS_PREFIX + "CropToCircle", CropToCircle);
                 accessor.SetValueBoolean(SETTINGS_PREFIX + "BinToHalf", BinToHalf);
                 accessor.SetValueBoolean(SETTINGS_PREFIX + "AutoCleanSubFrames", AutoCleanSubFrames);
+                accessor.SetValueBoolean(SETTINGS_PREFIX + "SlowMode", SlowMode);
                 accessor.SetValueString(SETTINGS_PREFIX + "SkyWaveOutputDirectory", skyWaveOutputDirectory);
             } catch (Exception ex) {
                 Logger.Warning($"SKW: Failed to save settings: {ex.Message}");
@@ -827,6 +904,7 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                 cropToCircle = accessor.GetValueBoolean(SETTINGS_PREFIX + "CropToCircle", cropToCircle);
                 binToHalf = accessor.GetValueBoolean(SETTINGS_PREFIX + "BinToHalf", binToHalf);
                 autoCleanSubFrames = accessor.GetValueBoolean(SETTINGS_PREFIX + "AutoCleanSubFrames", autoCleanSubFrames);
+                slowMode = accessor.GetValueBoolean(SETTINGS_PREFIX + "SlowMode", slowMode);
                 skyWaveOutputDirectory = accessor.GetValueString(SETTINGS_PREFIX + "SkyWaveOutputDirectory", skyWaveOutputDirectory);
                 Logger.Info($"SKW: Settings loaded — star={starName}, filter={filterName}, dir={skyWaveOutputDirectory}");
             } catch (Exception ex) {

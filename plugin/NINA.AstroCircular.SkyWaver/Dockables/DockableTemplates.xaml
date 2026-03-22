@@ -74,6 +74,13 @@
                 <TextBox Grid.Row="2" Grid.Column="5" Text="{Binding SettleSeconds, UpdateSourceTrigger=PropertyChanged}" Margin="2,1" FontSize="11" />
             </Grid>
 
+            <!-- Slow Mode toggle -->
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                <CheckBox IsChecked="{Binding SlowMode}" VerticalAlignment="Center" />
+                <TextBlock Text="Slow mode (plate-solve every position — for inaccurate mounts)"
+                           Margin="6,0,0,0" VerticalAlignment="Center" FontSize="10" Foreground="#999" />
+            </StackPanel>
+
             <!-- Run / Cancel -->
             <Grid Margin="0,0,0,3">
                 <Grid.ColumnDefinitions>

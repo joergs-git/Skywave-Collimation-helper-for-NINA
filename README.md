@@ -59,6 +59,7 @@ See the full list of 16 presets in the [web tool](https://joergs-git.github.io/a
 
 - **Camera rotation:** Set your camera to 0° or 180° rotation to avoid confusion with mirrored orientation in the integrated image. Since we capture in a circle, rotation doesn't affect collimation quality — it just makes visual interpretation easier.
 - **Center position first:** The plugin always captures the center star position first (if enabled), then the ring positions. This matches SkyWave's expectation for field-dependent analysis.
+- **Slow mode:** Enable this if your mount is not accurate enough for blind slewing. In slow mode, the plugin refocuses and plate-solves at every single ring position — much slower but ensures precise positioning. The workflow per position is: refocus → L filter → slew & center (plate-solve) → defocus → target filter → expose. Default is off (blind slew after initial centering).
 
 ## Requirements
 
