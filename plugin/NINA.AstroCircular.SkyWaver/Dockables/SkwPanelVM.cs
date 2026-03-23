@@ -253,6 +253,14 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
             set { includeCenter = value; RaisePropertyChanged(); SaveSettings(); RebuildMap(); }
         }
 
+        // ── Autofocus ──
+
+        private bool runAutofocus = false;
+        public bool RunAutofocus {
+            get => runAutofocus;
+            set { runAutofocus = value; RaisePropertyChanged(); SaveSettings(); }
+        }
+
         // ── Integration ──
 
         private bool autoCleanSubFrames = false;
@@ -649,14 +657,8 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                 Progress = 15;
                 await SwitchFilter(FilterName, ct);
 
-                // Step 3b: Offer autofocus before defocusing
-                var afAnswer = Application.Current.Dispatcher.Invoke(() =>
-                    MessageBox.Show(
-                        "Run autofocus routine now before defocusing?",
-                        "SkyWave — Autofocus",
-                        MessageBoxButton.YesNo,
-                        MessageBoxImage.Question));
-                if (afAnswer == MessageBoxResult.Yes) {
+                // Step 3b: Autofocus before defocusing (if enabled)
+                if (RunAutofocus) {
                     StatusText = "Running autofocus...";
                     Progress = 17;
                     var af = autoFocusVMFactory.Create();
@@ -924,6 +926,7 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                 accessor.SetValueInt32(SETTINGS_PREFIX + "RadiusPercent", RadiusPercent);
                 accessor.SetValueInt32(SETTINGS_PREFIX + "SettleSeconds", SettleSeconds);
                 accessor.SetValueBoolean(SETTINGS_PREFIX + "IncludeCenter", IncludeCenter);
+                accessor.SetValueBoolean(SETTINGS_PREFIX + "RunAutofocus", RunAutofocus);
                 accessor.SetValueBoolean(SETTINGS_PREFIX + "AutoCleanSubFrames", AutoCleanSubFrames);
                 accessor.SetValueString(SETTINGS_PREFIX + "SkyWaveOutputDirectory", skyWaveOutputDirectory);
             } catch (Exception ex) {
@@ -950,6 +953,7 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                 radiusPercent = accessor.GetValueInt32(SETTINGS_PREFIX + "RadiusPercent", radiusPercent);
                 settleSeconds = accessor.GetValueInt32(SETTINGS_PREFIX + "SettleSeconds", settleSeconds);
                 includeCenter = accessor.GetValueBoolean(SETTINGS_PREFIX + "IncludeCenter", includeCenter);
+                runAutofocus = accessor.GetValueBoolean(SETTINGS_PREFIX + "RunAutofocus", runAutofocus);
                 autoCleanSubFrames = accessor.GetValueBoolean(SETTINGS_PREFIX + "AutoCleanSubFrames", autoCleanSubFrames);
                 skyWaveOutputDirectory = accessor.GetValueString(SETTINGS_PREFIX + "SkyWaveOutputDirectory", skyWaveOutputDirectory);
                 Logger.Info($"SKW: Settings loaded — star={starName}, filter={filterName}, dir={skyWaveOutputDirectory}");

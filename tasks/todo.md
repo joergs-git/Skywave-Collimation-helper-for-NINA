@@ -41,6 +41,14 @@
 - [ ] **Verify output files** — Confirm integrated FITS loads correctly in SkyWave
 - [x] ~~Test slow mode~~ — removed, not applicable (ring positions are intentionally off-center)
 
+## Open — Notifications (v0.4.0)
+- [ ] **Pushover via Ground Station** — Optional notifications using Dale Ghent's
+  Ground Station plugin. Two notification points:
+  1. When the autofocus prompt appears (so user knows to check NINA)
+  2. When the collimation job completes (success or failure)
+  - Must be an opt-in toggle (off by default)
+  - Research Ground Station's API: how plugins send notifications through it
+
 ## Open — HTML Tool Fixes
 - [ ] Fix TakeExposure.ExposureCount: 0 → 1 in generated NINA JSON
 - [ ] Fix PixInsight script: use windowById instead of activeWindow

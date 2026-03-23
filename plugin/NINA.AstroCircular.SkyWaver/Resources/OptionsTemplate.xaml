@@ -5,58 +5,8 @@
     <DataTemplate x:Key="Collimation Helper for SkyWave_Options">
         <StackPanel Orientation="Vertical" MaxWidth="640" Margin="5">
 
-            <!-- Note about output folder -->
-            <TextBlock Text="Output folder is configured in the SKW Collimation panel (Imaging tab)."
-                       Foreground="#888" FontSize="10" Margin="0,0,0,6" FontStyle="Italic" />
-
-            <!-- Post-Capture Integration -->
-            <GroupBox Header="Post-Capture Integration" Margin="0,0,0,4">
-                <StackPanel Margin="6,2">
-                    <TextBlock Text="Integration is a pure pixel-by-pixel average — no alignment, no rejection, no interpolation, no normalization."
-                               Margin="0,2" FontStyle="Italic" Foreground="#888" TextWrapping="Wrap" />
-                    <StackPanel Orientation="Horizontal" Margin="0,2">
-                        <CheckBox IsChecked="{Binding Settings.AutoCleanSubFrames}" VerticalAlignment="Center" />
-                        <TextBlock Text="Auto-delete sub-frames — keeps only the integrated FITS" Margin="6,0,0,0" VerticalAlignment="Center" />
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Margin="0,2">
-                        <CheckBox IsChecked="{Binding Settings.IncludeCenter}" VerticalAlignment="Center" />
-                        <TextBlock Text="Include center position — extra frame at star center" Margin="6,0,0,0" VerticalAlignment="Center" />
-                    </StackPanel>
-                </StackPanel>
-            </GroupBox>
-
-            <!-- Equipment (from NINA profile) -->
-            <GroupBox Header="Equipment (from NINA profile — override if needed)" Margin="0,0,0,4">
-                <Grid Margin="6,2">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="90" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="90" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="90" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Focal L. mm" VerticalAlignment="Center" />
-                    <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Settings.FocalLengthMm, StringFormat={}{0:F1}, UpdateSourceTrigger=LostFocus}" Margin="2,1" />
-                    <TextBlock Grid.Row="0" Grid.Column="2" Text="Aperture mm" VerticalAlignment="Center" Margin="6,0,0,0" />
-                    <TextBox Grid.Row="0" Grid.Column="3" Text="{Binding Settings.ApertureMm, StringFormat={}{0:F1}, UpdateSourceTrigger=LostFocus}" Margin="2,1" />
-                    <TextBlock Grid.Row="0" Grid.Column="4" Text="Pixel Size um" VerticalAlignment="Center" Margin="6,0,0,0" />
-                    <TextBox Grid.Row="0" Grid.Column="5" Text="{Binding Settings.PixelSizeUm, StringFormat={}{0:F2}, UpdateSourceTrigger=LostFocus}" Margin="2,1" />
-                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Sensor W mm" VerticalAlignment="Center" />
-                    <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Settings.SensorWidthMm, StringFormat={}{0:F1}, UpdateSourceTrigger=LostFocus}" Margin="2,1" />
-                    <TextBlock Grid.Row="1" Grid.Column="2" Text="Sensor H mm" VerticalAlignment="Center" Margin="6,0,0,0" />
-                    <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding Settings.SensorHeightMm, StringFormat={}{0:F1}, UpdateSourceTrigger=LostFocus}" Margin="2,1" />
-                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Latitude" VerticalAlignment="Center" />
-                    <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Settings.ObserverLatitude, StringFormat={}{0:F2}, UpdateSourceTrigger=LostFocus}" Margin="2,1" />
-                    <TextBlock Grid.Row="2" Grid.Column="2" Text="Longitude" VerticalAlignment="Center" Margin="6,0,0,0" />
-                    <TextBox Grid.Row="2" Grid.Column="3" Text="{Binding Settings.ObserverLongitude, StringFormat={}{0:F2}, UpdateSourceTrigger=LostFocus}" Margin="2,1" />
-                </Grid>
-            </GroupBox>
+            <TextBlock Text="All settings are in the Collimation Helper panel (Imaging tab). Equipment data is read from your NINA profile automatically."
+                       Foreground="#888" FontSize="10" Margin="0,0,0,6" FontStyle="Italic" TextWrapping="Wrap" />
 
             <!-- Support link -->
             <Button Command="{Binding OpenCoffeeCommand}" Cursor="Hand"
