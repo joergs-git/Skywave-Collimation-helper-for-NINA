@@ -821,9 +821,29 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                         Logger.Warning($"SKW: Failed to read {existingFiles[f]}: {readEx.Message}");
                     }
                 }
-                // Pure pixel average — no alignment, no rejection, no interpolation, no binning, no cropping
+                // Pure pixel average — no alignment, no rejection, no interpolation
                 for (int p = 0; p < pixelCount; p++) accumulated[p] /= frameCount;
                 Logger.Info($"SKW: Averaged {frameCount} frames ({width}x{height})");
+
+                // Crop to ring pattern bounding box + 50px margin (reduces file size)
+                int cropMarginPx = 50;
+                int halfCropW = (int)(RadiusPercent / 100.0 * width / 2) + cropMarginPx;
+                int halfCropH = (int)(RadiusPercent / 100.0 * height / 2) + cropMarginPx;
+                int cropW = Math.Min(halfCropW * 2, width);
+                int cropH = Math.Min(halfCropH * 2, height);
+                int cropX = (width - cropW) / 2;
+                int cropY = (height - cropH) / 2;
+
+                if (cropW < width || cropH < height) {
+                    var cropped = new double[cropW * cropH];
+                    for (int row = 0; row < cropH; row++) {
+                        Array.Copy(accumulated, (cropY + row) * width + cropX, cropped, row * cropW, cropW);
+                    }
+                    accumulated = cropped;
+                    width = cropW;
+                    height = cropH;
+                    Logger.Info($"SKW: Cropped to {width}x{height} (ring pattern + {cropMarginPx}px margin)");
+                }
 
                 ushort[] pixelData = FitsAverager.ToUShort16(accumulated);
 
