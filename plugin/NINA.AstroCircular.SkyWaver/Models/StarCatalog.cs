@@ -38,21 +38,39 @@ namespace NINA.AstroCircular.SkyWaver.Models {
         };
 
         /// <summary>
-        /// Find the best star for a given observing time and location.
-        /// Selects the highest-altitude star with hour angle less than 3 hours.
+        /// Find the best star for a given observing time, location, and optical setup.
+        /// Filters by magnitude range (to avoid overexposure, targeting ~60% ADU in ~8s)
+        /// then selects the highest-altitude star within ±3h of the meridian.
         /// </summary>
         /// <param name="observingTimeUtc">Target observing time in UTC</param>
         /// <param name="latitudeDeg">Observer latitude in degrees north</param>
         /// <param name="longitudeDeg">Observer longitude in degrees east</param>
+        /// <param name="focalLengthMm">Telescope focal length in mm (0 to skip mag filter)</param>
+        /// <param name="apertureMm">Telescope aperture in mm (0 to skip mag filter)</param>
+        /// <param name="exposureSeconds">Exposure time in seconds</param>
+        /// <param name="gain">Camera gain setting</param>
         /// <param name="customStars">Optional additional user-defined stars</param>
-        /// <returns>Best star and its altitude, or null if none within ±3h HA</returns>
-        public static (StarPreset Star, double AltitudeDeg)? FindBestStar(
+        /// <returns>Best star, its altitude, and ideal mag range — or null if none found</returns>
+        public static (StarPreset Star, double AltitudeDeg, double MagLow, double MagHigh)? FindBestStar(
             DateTime observingTimeUtc,
             double latitudeDeg,
             double longitudeDeg,
+            double focalLengthMm = 0,
+            double apertureMm = 0,
+            double exposureSeconds = 8,
+            int gain = 100,
             List<StarPreset> customStars = null) {
 
             double lst = CoordinateUtils.GetLST(observingTimeUtc, longitudeDeg);
+
+            // Compute ideal magnitude range for this optical setup
+            double magLow = 2.0;
+            double magHigh = 8.0;
+            if (focalLengthMm > 0 && apertureMm > 0) {
+                var (_, low, high) = MagnitudeAdvisor.GetIdealMagnitude(focalLengthMm, apertureMm, exposureSeconds, gain);
+                magLow = low;
+                magHigh = high;
+            }
 
             var allStars = new List<StarPreset>(Presets);
             if (customStars != null) allStars.AddRange(customStars);
@@ -61,6 +79,9 @@ namespace NINA.AstroCircular.SkyWaver.Models {
             double bestAlt = -99;
 
             foreach (var star in allStars) {
+                // Filter by magnitude range (avoid overexposure, target ~60% ADU)
+                if (star.Magnitude < magLow || star.Magnitude > magHigh) continue;
+
                 double raH = CoordinateUtils.ParseHMS(star.RA);
                 double decD = CoordinateUtils.ParseDMS(star.Dec);
 
@@ -78,7 +99,7 @@ namespace NINA.AstroCircular.SkyWaver.Models {
             }
 
             if (best == null) return null;
-            return (best, bestAlt);
+            return (best, bestAlt, magLow, magHigh);
         }
     }
 }

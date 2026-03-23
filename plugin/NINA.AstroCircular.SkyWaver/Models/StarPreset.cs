@@ -1,7 +1,7 @@
 namespace NINA.AstroCircular.SkyWaver.Models {
 
     /// <summary>
-    /// A bright, isolated star suitable for SKW collimation.
+    /// An isolated star suitable for SKW collimation (magnitude matched to optical setup).
     /// </summary>
     public class StarPreset {
         public string Name { get; set; }

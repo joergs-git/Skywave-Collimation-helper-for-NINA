@@ -75,7 +75,7 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
             // Icon
             try {
                 var dict = new ResourceDictionary();
-                dict.Source = new Uri("NINA.AstroCircular.SkyWaver;component/Resources/Icons.xaml", UriKind.RelativeOrAbsolute);
+                dict.Source = new Uri("NINA.CollimationHelper.SkyWave;component/Resources/Icons.xaml", UriKind.RelativeOrAbsolute);
                 ImageGeometry = (GeometryGroup)dict["SkwPanelIconSVG"];
                 ImageGeometry.Freeze();
             } catch {
@@ -484,12 +484,28 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
             try {
                 double lat = profileService?.ActiveProfile?.AstrometrySettings?.Latitude ?? 52.17;
                 double lon = profileService?.ActiveProfile?.AstrometrySettings?.Longitude ?? 7.25;
-                var result = StarCatalog.FindBestStar(DateTime.UtcNow, lat, lon);
+
+                // Pass optical setup so MagnitudeAdvisor can filter for ~60% ADU
+                double fl = profileService?.ActiveProfile?.TelescopeSettings?.FocalLength ?? 0;
+                double aperture = fl > 0 && profileService?.ActiveProfile?.TelescopeSettings?.FocalRatio > 0
+                    ? fl / profileService.ActiveProfile.TelescopeSettings.FocalRatio : 0;
+
+                var result = StarCatalog.FindBestStar(
+                    DateTime.UtcNow, lat, lon,
+                    fl, aperture, ExposureTime, Gain);
+
                 if (result.HasValue) {
                     SelectedPreset = result.Value.Star;
-                    StatusText = $"Best star: {result.Value.Star.Name} (alt {result.Value.AltitudeDeg:F0} deg)";
+                    StatusText = $"Best star: {result.Value.Star.Name} (alt {result.Value.AltitudeDeg:F0}°, mag {result.Value.Star.Magnitude:F1}, ideal range {result.Value.MagLow:F1}–{result.Value.MagHigh:F1})";
                 } else {
-                    StatusText = "No suitable star within 3h of meridian";
+                    // Fall back without magnitude filter
+                    var fallback = StarCatalog.FindBestStar(DateTime.UtcNow, lat, lon);
+                    if (fallback.HasValue) {
+                        SelectedPreset = fallback.Value.Star;
+                        StatusText = $"No star in ideal mag range — using {fallback.Value.Star.Name} (mag {fallback.Value.Star.Magnitude:F1}, alt {fallback.Value.AltitudeDeg:F0}°). Check exposure time.";
+                    } else {
+                        StatusText = "No suitable star within 3h of meridian";
+                    }
                 }
             } catch (Exception ex) {
                 StatusText = $"Star finder error: {ex.Message}";

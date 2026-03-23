@@ -36,7 +36,7 @@ The plugin handles everything automatically — slew, center, filter change, opt
 
 ## How it works
 
-1. **Select** a bright, isolated star (from 16 built-in presets or manual RA/Dec)
+1. **Select** an isolated star of appropriate magnitude (from 16 built-in presets or manual RA/Dec — "Find Best" auto-selects based on your optics to target ~60% ADU without overexposure)
 2. **Switch to L filter** and **plate-solve & center** on the star (in focus)
 3. **Switch to target filter** (e.g. R, G, B) for capture
 4. **Optionally run autofocus** — a dialog asks before defocusing (works with NINA's built-in AF or Hocusfocus)

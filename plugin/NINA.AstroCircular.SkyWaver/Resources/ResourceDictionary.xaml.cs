@@ -8,19 +8,19 @@ namespace NINA.AstroCircular.SkyWaver.Resources {
         public SkwResourceDictionary() {
             // Load merged dictionaries programmatically instead of XAML InitializeComponent
             MergedDictionaries.Add(new ResourceDictionary {
-                Source = new System.Uri("pack://application:,,,/NINA.AstroCircular.SkyWaver;component/Resources/OptionsTemplate.xaml")
+                Source = new System.Uri("pack://application:,,,/NINA.CollimationHelper.SkyWave;component/Resources/OptionsTemplate.xaml")
             });
             MergedDictionaries.Add(new ResourceDictionary {
-                Source = new System.Uri("pack://application:,,,/NINA.AstroCircular.SkyWaver;component/Resources/SkwDefocusTemplate.xaml")
+                Source = new System.Uri("pack://application:,,,/NINA.CollimationHelper.SkyWave;component/Resources/SkwDefocusTemplate.xaml")
             });
             MergedDictionaries.Add(new ResourceDictionary {
-                Source = new System.Uri("pack://application:,,,/NINA.AstroCircular.SkyWaver;component/Resources/SkwCircularCaptureTemplate.xaml")
+                Source = new System.Uri("pack://application:,,,/NINA.CollimationHelper.SkyWave;component/Resources/SkwCircularCaptureTemplate.xaml")
             });
             MergedDictionaries.Add(new ResourceDictionary {
-                Source = new System.Uri("pack://application:,,,/NINA.AstroCircular.SkyWaver;component/Resources/SkwIntegrateFramesTemplate.xaml")
+                Source = new System.Uri("pack://application:,,,/NINA.CollimationHelper.SkyWave;component/Resources/SkwIntegrateFramesTemplate.xaml")
             });
             MergedDictionaries.Add(new ResourceDictionary {
-                Source = new System.Uri("pack://application:,,,/NINA.AstroCircular.SkyWaver;component/Resources/SkwCollimationRunTemplate.xaml")
+                Source = new System.Uri("pack://application:,,,/NINA.CollimationHelper.SkyWave;component/Resources/SkwCollimationRunTemplate.xaml")
             });
         }
     }

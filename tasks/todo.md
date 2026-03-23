@@ -27,15 +27,15 @@
 - [x] v0.2.0: Equipment auto-read from NINA profile
 - [x] v0.2.0: WPF geometry icon
 
-## Open — Next Release (v0.3.0)
-- [ ] **Publish to NINA plugin repository** — Submit plugin manifest to
-  bitbucket.org/Isbeorn/nina.plugin.manifests so the plugin appears in
-  NINA's built-in plugin manager (Options > Plugins > Available) with
-  automatic updates. Requires:
-  - Stable version tag
-  - Plugin manifest JSON with download URL, version, checksum
-  - Submission via pull request to isbeorn's manifest repo
-  - See: https://github.com/isbeorn/nina.plugin.template for manifest format
+## Open — Go Live (v0.3.0)
+- [ ] **Publish to NINA plugin repository** — manifest.json is prepared in
+  repo root with placeholder SHA256. To go live:
+  1. Create stable release tag `v0.2.0`
+  2. Download zip, generate SHA256 checksum
+  3. Update manifest.json with checksum and stable download URL
+  4. Fork github.com/isbeorn/nina.plugin.manifests
+  5. Place at `manifests/c/CollimationHelperForSkyWave/manifest.0.2.0.1.json`
+  6. Submit PR (validation: `npm install && node gather.js`)
 - [ ] **PixInsight Tools integration** — Optional integration path using
   isbeorn's PixInsight Tools plugin for stacking
 - [ ] **Verify output files** — Confirm integrated FITS loads correctly in SkyWave

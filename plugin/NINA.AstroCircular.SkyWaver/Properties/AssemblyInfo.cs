@@ -23,13 +23,13 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyMetadata("License", "GPL-3.0")]
 [assembly: AssemblyMetadata("LicenseURL", "https://www.gnu.org/licenses/gpl-3.0.html")]
 [assembly: AssemblyMetadata("Repository", "https://github.com/joergs-git/Skywave-Collimation-helper-for-NINA")]
-[assembly: AssemblyMetadata("Homepage", "https://joergs-git.github.io/Skywave-Collimation-helper-for-NINA/")]
+[assembly: AssemblyMetadata("Homepage", "https://github.com/joergs-git/Skywave-Collimation-helper-for-NINA")]
 [assembly: AssemblyMetadata("Tags", "Collimation,SkyWave,SKW,Wavefront,Defocus,Optics,Tilt")]
 [assembly: AssemblyMetadata("ShortDescription", "Automated SkyWave collimation helper — circular defocused star capture & native FITS integration")]
 [assembly: AssemblyMetadata("LongDescription",
 @"Collimation Helper for SkyWave automates the complete telescope collimation data-capture workflow inside N.I.N.A., producing wavefront-ready FITS images for InnovationForesight's SkyWave AI analysis:
 
-1. Select a bright, isolated star (from 16 presets or manual RA/Dec)
+1. Select an isolated star of appropriate magnitude (auto-selected based on your optics)
 2. Plate-solve and center on the star (in focus)
 3. Switch to the target filter and optionally run autofocus
 4. Defocus the telescope by a configurable number of focuser steps
