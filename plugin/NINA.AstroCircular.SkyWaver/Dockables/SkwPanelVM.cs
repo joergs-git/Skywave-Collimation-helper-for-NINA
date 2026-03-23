@@ -72,19 +72,6 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
 
             Title = "Collimation Helper for SkyWave";
 
-            // Icon — find from application resources (DockableTemplates.xaml is already loaded via [Export])
-            try {
-                var geo = Application.Current.TryFindResource("SkwPanelIconSVG") as System.Windows.Media.GeometryGroup;
-                if (geo != null) {
-                    geo.Freeze();
-                    ImageGeometry = geo;
-                } else {
-                    Logger.Warning("SKW: Icon resource 'SkwPanelIconSVG' not found in application resources");
-                }
-            } catch (Exception ex) {
-                Logger.Warning($"SKW: Failed to load plugin icon: {ex.Message}");
-            }
-
             // Commands
             RunCommand = new AsyncCommand<bool>(RunCollimation, (o) => !IsRunning);
             CancelCommand = new RelayCommand((o) => Cancel());
