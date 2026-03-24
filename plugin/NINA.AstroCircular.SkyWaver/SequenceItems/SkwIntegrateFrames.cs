@@ -107,15 +107,15 @@ namespace NINA.AstroCircular.SkyWaver.SequenceItems {
                 Status = $"SKW: Integrating {files.Count} frames..."
             });
 
-            // Step 1: Average all frames
-            var (averaged, width, height, frameCount) = await FitsAverager.Average(files, imageDataFactory, ct);
+            // Step 1: MAX-stack all frames (each pixel keeps its maximum value)
+            var (maxData, width, height, frameCount) = await FitsAverager.MaxStack(files, imageDataFactory, ct);
 
             progress?.Report(new ApplicationStatus {
-                Status = $"SKW: Averaged {frameCount} frames ({width}x{height})"
+                Status = $"SKW: MAX-stacked {frameCount} frames ({width}x{height})"
             });
 
-            // Step 2: Convert to 16-bit (pure average, no post-processing)
-            ushort[] pixelData = FitsAverager.ToUShort16(averaged);
+            // Step 2: Convert to 16-bit
+            ushort[] pixelData = FitsAverager.ToUShort16(maxData);
 
             // Step 3: Build FITS headers with correct values
             var headers = FitsHeaderWriter.BuildHeaders(

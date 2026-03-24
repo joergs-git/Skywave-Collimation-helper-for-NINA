@@ -226,13 +226,7 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
         private int binning = 1;
         public int Binning {
             get => binning;
-            set { binning = value; RaisePropertyChanged(); RaisePropertyChanged(nameof(BinningIndex)); SaveSettings(); }
-        }
-
-        /// <summary>ComboBox index: 0=1x1, 1=2x2, 2=3x3, 3=4x4</summary>
-        public int BinningIndex {
-            get => Binning - 1;
-            set { Binning = value + 1; }
+            set { binning = 1; } // SkyWave only supports unbinned images
         }
 
         // ── Pattern ──
@@ -812,13 +806,14 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                 StatusText = $"Integrating {existingFiles.Count} frames...";
                 Logger.Info($"SKW: Integrating {existingFiles.Count} files: {string.Join(", ", existingFiles.Select(Path.GetFileName))}");
 
-                // Read and average using our own FITS reader (avoids NINA pipeline issues)
+                // MAX stacking — each pixel keeps its maximum value across all frames
+                // Stars are at different positions per frame, so MAX lets every donut shine through
                 var firstImg = RawFitsReader.Read(existingFiles[0]);
                 int width = firstImg.Width;
                 int height = firstImg.Height;
                 int pixelCount = width * height;
-                double[] accumulated = new double[pixelCount];
-                for (int p = 0; p < pixelCount; p++) accumulated[p] = firstImg.Pixels[p];
+                double[] maxStack = new double[pixelCount];
+                for (int p = 0; p < pixelCount; p++) maxStack[p] = firstImg.Pixels[p];
 
                 int frameCount = 1;
                 for (int f = 1; f < existingFiles.Count; f++) {
@@ -826,7 +821,9 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                     try {
                         var img = RawFitsReader.Read(existingFiles[f]);
                         if (img.Width == width && img.Height == height) {
-                            for (int p = 0; p < pixelCount; p++) accumulated[p] += img.Pixels[p];
+                            for (int p = 0; p < pixelCount; p++) {
+                                if (img.Pixels[p] > maxStack[p]) maxStack[p] = img.Pixels[p];
+                            }
                             frameCount++;
                         } else {
                             Logger.Warning($"SKW: Skipping {existingFiles[f]} — size mismatch ({img.Width}x{img.Height} vs {width}x{height})");
@@ -835,13 +832,12 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                         Logger.Warning($"SKW: Failed to read {existingFiles[f]}: {readEx.Message}");
                     }
                 }
-                // Pure pixel average — no alignment, no rejection, no interpolation
-                for (int p = 0; p < pixelCount; p++) accumulated[p] /= frameCount;
-                Logger.Info($"SKW: Averaged {frameCount} frames ({width}x{height})");
+                var accumulated = maxStack;
+                Logger.Info($"SKW: MAX-stacked {frameCount} frames ({width}x{height})");
 
                 // Optional crop to ring pattern bounding box + 150px margin
                 if (CropAfterStack) {
-                    int cropMarginPx = 150;
+                    int cropMarginPx = 100;
                     int halfCropW = (int)(RadiusPercent / 100.0 * width / 2) + cropMarginPx;
                     int halfCropH = (int)(RadiusPercent / 100.0 * height / 2) + cropMarginPx;
                     int cropW = Math.Min(halfCropW * 2, width);

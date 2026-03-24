@@ -8,8 +8,9 @@ using System.Threading.Tasks;
 namespace NINA.AstroCircular.SkyWaver.Imaging {
 
     /// <summary>
-    /// Native FITS frame integration: pixel-by-pixel averaging, optional crop-to-circle,
-    /// optional bin 2x2 downsample. Produces a 16-bit monochrome array for SkyWave.
+    /// Native FITS frame integration: pixel-by-pixel MAX stacking.
+    /// Each pixel keeps its maximum value across all frames, so every defocused
+    /// star donut shines through at full brightness. Produces 16-bit mono for SkyWave.
     /// </summary>
     public class FitsAverager {
 
@@ -24,13 +25,9 @@ namespace NINA.AstroCircular.SkyWaver.Imaging {
         }
 
         /// <summary>
-        /// Load FITS files and compute pixel-by-pixel average.
+        /// Load FITS files and compute pixel-by-pixel MAX (maximum value per pixel).
         /// </summary>
-        /// <param name="inputFiles">Paths to FITS sub-frames</param>
-        /// <param name="imageDataFactory">NINA's image data factory for reading FITS</param>
-        /// <param name="ct">Cancellation token</param>
-        /// <returns>Averaged pixel data as double array with dimensions</returns>
-        public static async Task<(double[] data, int width, int height, int frameCount)> Average(
+        public static async Task<(double[] data, int width, int height, int frameCount)> MaxStack(
             List<string> inputFiles, IImageDataFactory imageDataFactory, CancellationToken ct) {
 
             if (inputFiles == null || inputFiles.Count < 2) {
@@ -43,14 +40,14 @@ namespace NINA.AstroCircular.SkyWaver.Imaging {
             int height = firstImage.Properties.Height;
             int pixelCount = width * height;
 
-            // Accumulator buffer
-            double[] accumulator = new double[pixelCount];
+            // MAX buffer — start with first frame
+            double[] maxBuf = new double[pixelCount];
             var firstData = firstImage.Data.FlatArray;
             for (int p = 0; p < pixelCount; p++) {
-                accumulator[p] = firstData[p];
+                maxBuf[p] = firstData[p];
             }
 
-            // Add remaining frames
+            // MAX remaining frames
             int frameCount = 1;
             for (int f = 1; f < inputFiles.Count; f++) {
                 ct.ThrowIfCancellationRequested();
@@ -59,23 +56,17 @@ namespace NINA.AstroCircular.SkyWaver.Imaging {
 
                 var image = await imageDataFactory.CreateFromFile(inputFiles[f], 16, false, NINA.Core.Enum.RawConverterEnum.FREEIMAGE, ct);
                 if (image.Properties.Width != width || image.Properties.Height != height) {
-                    // Skip frames with mismatched dimensions
                     continue;
                 }
 
                 var data = image.Data.FlatArray;
                 for (int p = 0; p < pixelCount; p++) {
-                    accumulator[p] += data[p];
+                    if (data[p] > maxBuf[p]) maxBuf[p] = data[p];
                 }
                 frameCount++;
             }
 
-            // Divide by frame count to get average
-            for (int p = 0; p < pixelCount; p++) {
-                accumulator[p] /= frameCount;
-            }
-
-            return (accumulator, width, height, frameCount);
+            return (maxBuf, width, height, frameCount);
         }
 
         /// <summary>

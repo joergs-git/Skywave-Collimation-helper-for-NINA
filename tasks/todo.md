@@ -41,6 +41,14 @@
 - [ ] **Verify output files** — Confirm integrated FITS loads correctly in SkyWave
 - [x] ~~Test slow mode~~ — removed, not applicable (ring positions are intentionally off-center)
 
+## Open — UI Polish (v0.3.1)
+- [ ] **Stacked image thumbnail in completion popup** — Show a preview of the
+  integrated FITS in the "Finished stacking" dialog. Load the output file,
+  auto-stretch, and display as a thumbnail alongside the completion message.
+- [ ] **Optional rectangular crop** — Toggle to crop the integrated image to the
+  inscribed rectangle of the ring pattern, reducing file size. Pure pixel crop
+  only (no interpolation). Applied after stacking, before FITS write.
+
 ## Open — Notifications (v0.4.0)
 - [ ] **Pushover via Ground Station** — Optional notifications using Dale Ghent's
   Ground Station plugin. Two notification points:
