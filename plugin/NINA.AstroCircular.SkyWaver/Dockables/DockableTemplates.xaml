@@ -26,7 +26,7 @@
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0" Text="Star:" VerticalAlignment="Center" Margin="0,0,4,0" FontWeight="Bold" />
                 <ComboBox Grid.Column="1" ItemsSource="{Binding StarPresets}" SelectedItem="{Binding SelectedPreset}"
-                          DisplayMemberPath="Name" Margin="0,0,4,0" />
+                          DisplayMemberPath="DisplayLabel" Margin="0,0,4,0" />
                 <Button Grid.Column="2" Content="Find Best" Command="{Binding FindBestStarCommand}" Padding="8,2" />
             </Grid>
 
@@ -58,32 +58,41 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
                 <TextBlock Grid.Row="0" Grid.Column="0" Text="Defocus" VerticalAlignment="Center" FontSize="11" />
-                <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding DefocusSteps, UpdateSourceTrigger=PropertyChanged}" Margin="2,1" FontSize="11" />
-                <TextBlock Grid.Row="0" Grid.Column="2" Text="Dir" VerticalAlignment="Center" FontSize="11" Margin="4,0,0,0" />
-                <ComboBox Grid.Row="0" Grid.Column="3" SelectedIndex="{Binding DefocusDirectionIndex}" Margin="2,1" FontSize="11">
+                <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding DefocusSteps, UpdateSourceTrigger=PropertyChanged}" Margin="2,1" FontSize="11"
+                         ToolTip="Defocus in focuser steps" />
+                <TextBlock Grid.Row="0" Grid.Column="2" Text="St/µm" VerticalAlignment="Center" FontSize="11" Margin="4,0,0,0"
+                           ToolTip="Steps per micron (e.g. ZWO EAF = 3)" />
+                <TextBox Grid.Row="0" Grid.Column="3" Text="{Binding StepsPerMicron, UpdateSourceTrigger=PropertyChanged}" Margin="2,1" FontSize="11"
+                         ToolTip="Steps per micron — check your focuser specs" />
+                <TextBlock Grid.Row="0" Grid.Column="4" Grid.ColumnSpan="2" Text="{Binding DefocusMicronsText}" VerticalAlignment="Center" FontSize="11" Margin="4,0,0,0"
+                           Foreground="#888" ToolTip="Computed defocus in microns — compare with SkyWave" />
+
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="Dir" VerticalAlignment="Center" FontSize="11" />
+                <ComboBox Grid.Row="1" Grid.Column="1" SelectedIndex="{Binding DefocusDirectionIndex}" Margin="2,1" FontSize="11">
                     <ComboBoxItem Content="Extra-focal (+)" />
                     <ComboBoxItem Content="Intra-focal (-)" />
                 </ComboBox>
-                <TextBlock Grid.Row="0" Grid.Column="4" Text="Exp s" VerticalAlignment="Center" FontSize="11" Margin="4,0,0,0" />
-                <TextBox Grid.Row="0" Grid.Column="5" Text="{Binding ExposureTime, UpdateSourceTrigger=PropertyChanged}" Margin="2,1" FontSize="11" />
+                <TextBlock Grid.Row="1" Grid.Column="2" Text="Exp s" VerticalAlignment="Center" FontSize="11" Margin="4,0,0,0" />
+                <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding ExposureTime, UpdateSourceTrigger=PropertyChanged}" Margin="2,1" FontSize="11" />
 
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="Filter" VerticalAlignment="Center" FontSize="11" />
-                <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding AvailableFilters}"
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="Filter" VerticalAlignment="Center" FontSize="11" />
+                <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding AvailableFilters}"
                           SelectedItem="{Binding FilterName}" Margin="2,1" FontSize="11" />
-                <TextBlock Grid.Row="1" Grid.Column="2" Text="Gain" VerticalAlignment="Center" FontSize="11" Margin="4,0,0,0" />
-                <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding Gain, UpdateSourceTrigger=PropertyChanged}" Margin="2,1" FontSize="11" />
-                <TextBlock Grid.Row="1" Grid.Column="4" Text="Offset" VerticalAlignment="Center" FontSize="11" Margin="4,0,0,0" />
-                <TextBox Grid.Row="1" Grid.Column="5" Text="{Binding Offset, UpdateSourceTrigger=PropertyChanged}" Margin="2,1" FontSize="11" />
+                <TextBlock Grid.Row="2" Grid.Column="2" Text="Gain" VerticalAlignment="Center" FontSize="11" Margin="4,0,0,0" />
+                <TextBox Grid.Row="2" Grid.Column="3" Text="{Binding Gain, UpdateSourceTrigger=PropertyChanged}" Margin="2,1" FontSize="11" />
+                <TextBlock Grid.Row="2" Grid.Column="4" Text="Offset" VerticalAlignment="Center" FontSize="11" Margin="4,0,0,0" />
+                <TextBox Grid.Row="2" Grid.Column="5" Text="{Binding Offset, UpdateSourceTrigger=PropertyChanged}" Margin="2,1" FontSize="11" />
 
-                <TextBlock Grid.Row="2" Grid.Column="0" Text="Pos." VerticalAlignment="Center" FontSize="11" />
-                <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding RingPositions, UpdateSourceTrigger=PropertyChanged}" Margin="2,1" FontSize="11" />
-                <TextBlock Grid.Row="2" Grid.Column="2" Text="Rad%" VerticalAlignment="Center" FontSize="11" Margin="4,0,0,0" />
-                <TextBox Grid.Row="2" Grid.Column="3" Text="{Binding RadiusPercent, UpdateSourceTrigger=PropertyChanged}" Margin="2,1" FontSize="11" />
-                <TextBlock Grid.Row="2" Grid.Column="4" Text="Settle" VerticalAlignment="Center" FontSize="11" Margin="4,0,0,0" />
-                <TextBox Grid.Row="2" Grid.Column="5" Text="{Binding SettleSeconds, UpdateSourceTrigger=PropertyChanged}" Margin="2,1" FontSize="11" />
+                <TextBlock Grid.Row="3" Grid.Column="0" Text="Pos." VerticalAlignment="Center" FontSize="11" />
+                <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding RingPositions, UpdateSourceTrigger=PropertyChanged}" Margin="2,1" FontSize="11" />
+                <TextBlock Grid.Row="3" Grid.Column="2" Text="Rad%" VerticalAlignment="Center" FontSize="11" Margin="4,0,0,0" />
+                <TextBox Grid.Row="3" Grid.Column="3" Text="{Binding RadiusPercent, UpdateSourceTrigger=PropertyChanged}" Margin="2,1" FontSize="11" />
+                <TextBlock Grid.Row="3" Grid.Column="4" Text="Settle" VerticalAlignment="Center" FontSize="11" Margin="4,0,0,0" />
+                <TextBox Grid.Row="3" Grid.Column="5" Text="{Binding SettleSeconds, UpdateSourceTrigger=PropertyChanged}" Margin="2,1" FontSize="11" />
             </Grid>
 
             <!-- Toggles -->

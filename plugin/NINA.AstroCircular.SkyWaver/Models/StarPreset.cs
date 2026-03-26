@@ -10,5 +10,8 @@ namespace NINA.AstroCircular.SkyWaver.Models {
         public double Magnitude { get; set; }
         public string Season { get; set; } // sp, su, fa, wi
         public string Note { get; set; }
+
+        /// <summary>Display label for ComboBox: "Name (mag X.X)"</summary>
+        public string DisplayLabel => $"{Name}  (mag {Magnitude:F1})";
     }
 }

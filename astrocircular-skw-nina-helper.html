@@ -568,21 +568,32 @@
 // STAR PRESETS
 // ============================================================
 const STAR_PRESETS = [
-  { name:"θ Boo",  ra:"14:25:11.8", dec:"51:51:02.7", mag:4.05, s:"sp", note:"Very isolated, ideal near zenith 52°N Apr/May" },
-  { name:"κ Dra",  ra:"12:33:28.9", dec:"69:47:17.6", mag:3.87, s:"sp", note:"Draco, extremely clean field, year-round >45° alt" },
-  { name:"λ Dra",  ra:"11:31:24.2", dec:"69:19:52.0", mag:3.84, s:"sp", note:"Near κ Dra, alternative in poor seeing" },
-  { name:"38 Lyn", ra:"09:18:50.6", dec:"36:48:09.4", mag:3.82, s:"sp", note:"Lynx, very sparse field, lower Dec" },
-  { name:"42 Dra", ra:"18:25:59.1", dec:"65:33:48.5", mag:4.82, s:"su", note:"★ Recommended! Perfect mag, extremely isolated" },
-  { name:"χ Dra",  ra:"18:21:03.4", dec:"72:43:58.2", mag:3.57, s:"su", note:"Northern Draco, circumpolar, clean field" },
-  { name:"CQ Dra", ra:"19:22:35.5", dec:"59:22:12.0", mag:4.96, s:"su", note:"Fainter, ideal for longer exposures" },
-  { name:"σ Dra",  ra:"19:32:21.6", dec:"69:39:40.2", mag:4.67, s:"su", note:"Well isolated, very northern" },
-  { name:"ξ Cep",  ra:"22:03:47.5", dec:"64:37:40.7", mag:4.29, s:"fa", note:"Cepheus, away from MW, well isolated" },
-  { name:"ι Cep",  ra:"22:49:40.8", dec:"66:12:01.5", mag:3.52, s:"fa", note:"Brighter but very clean field" },
-  { name:"θ Cep",  ra:"20:29:34.9", dec:"62:59:38.6", mag:4.22, s:"fa", note:"Early fall, good isolation" },
-  { name:"α Cam",  ra:"04:54:03.0", dec:"66:20:33.6", mag:4.29, s:"wi", note:"★ Recommended! Sparsest field in the sky" },
-  { name:"β Cam",  ra:"05:03:25.1", dec:"60:26:32.1", mag:4.03, s:"wi", note:"Near α Cam, slightly brighter" },
-  { name:"7 Cam",  ra:"04:57:17.2", dec:"53:45:08.5", mag:4.47, s:"wi", note:"Lower Dec, closer to zenith for 52°N" },
-  { name:"CS Cam", ra:"03:29:04.1", dec:"59:56:25.2", mag:4.21, s:"wi", note:"Early winter, Camelopardalis region" },
+  // Circumpolar — bright, available year-round
+  { name:"Kochab",  ra:"14:50:42.3", dec:"74:09:19.8", mag:2.08, s:"sp", note:"β UMi, circumpolar, very isolated, bright — ideal for fast scopes" },
+  { name:"Errai",   ra:"23:39:20.8", dec:"77:37:56.2", mag:3.21, s:"fa", note:"γ Cep, circumpolar, extremely isolated field" },
+  // Spring
+  { name:"Eltanin", ra:"17:56:36.4", dec:"51:29:20.0", mag:2.24, s:"sp", note:"γ Dra, bright and well isolated for typical FOVs" },
+  { name:"θ Boo",   ra:"14:25:11.8", dec:"51:51:02.7", mag:4.05, s:"sp", note:"Very isolated, ideal near zenith 52°N Apr/May" },
+  { name:"κ Dra",   ra:"12:33:28.9", dec:"69:47:17.6", mag:3.87, s:"sp", note:"Draco, extremely clean field, year-round >45° alt" },
+  { name:"λ Dra",   ra:"11:31:24.2", dec:"69:19:52.0", mag:3.84, s:"sp", note:"Near κ Dra, alternative in poor seeing" },
+  { name:"38 Lyn",  ra:"09:18:50.6", dec:"36:48:09.4", mag:3.82, s:"sp", note:"Lynx, very sparse field, lower Dec" },
+  // Summer
+  { name:"Rastaban", ra:"17:30:26.0", dec:"52:18:04.9", mag:2.79, s:"su", note:"β Dra, bright, well separated from Eltanin at typical FOVs" },
+  { name:"χ Dra",   ra:"18:21:03.4", dec:"72:43:58.2", mag:3.57, s:"su", note:"Northern Draco, circumpolar, clean field" },
+  { name:"42 Dra",  ra:"18:25:59.1", dec:"65:33:48.5", mag:4.82, s:"su", note:"Extremely isolated, use with longer exposures" },
+  { name:"CQ Dra",  ra:"19:22:35.5", dec:"59:22:12.0", mag:4.96, s:"su", note:"Fainter, ideal for longer exposures" },
+  { name:"σ Dra",   ra:"19:32:21.6", dec:"69:39:40.2", mag:4.67, s:"su", note:"Well isolated, very northern" },
+  // Fall
+  { name:"Alfirk",  ra:"21:28:39.6", dec:"70:33:38.6", mag:3.23, s:"fa", note:"β Cep, bright and well isolated" },
+  { name:"ι Cep",   ra:"22:49:40.8", dec:"66:12:01.5", mag:3.52, s:"fa", note:"Brighter but very clean field" },
+  { name:"ξ Cep",   ra:"22:03:47.5", dec:"64:37:40.7", mag:4.29, s:"fa", note:"Cepheus, away from MW, well isolated" },
+  { name:"θ Cep",   ra:"20:29:34.9", dec:"62:59:38.6", mag:4.22, s:"fa", note:"Early fall, good isolation" },
+  // Winter
+  { name:"Muscida", ra:"08:30:15.9", dec:"60:43:05.4", mag:3.36, s:"wi", note:"ο UMa, bright and isolated in sparse field" },
+  { name:"β Cam",   ra:"05:03:25.1", dec:"60:26:32.1", mag:4.03, s:"wi", note:"Near α Cam, slightly brighter" },
+  { name:"α Cam",   ra:"04:54:03.0", dec:"66:20:33.6", mag:4.29, s:"wi", note:"Sparsest field in the sky" },
+  { name:"7 Cam",   ra:"04:57:17.2", dec:"53:45:08.5", mag:4.47, s:"wi", note:"Lower Dec, closer to zenith for 52°N" },
+  { name:"CS Cam",  ra:"03:29:04.1", dec:"59:56:25.2", mag:4.21, s:"wi", note:"Early winter, Camelopardalis region" },
 ];
 const STAGS = { sp:"s-sp", su:"s-su", fa:"s-fa", wi:"s-wi" };
 const SNAMES = { sp:"SPR", su:"SUM", fa:"FAL", wi:"WIN" };

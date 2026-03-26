@@ -159,8 +159,19 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
         private int defocusSteps = 2442;
         public int DefocusSteps {
             get => defocusSteps;
-            set { defocusSteps = value; RaisePropertyChanged(); SaveSettings(); }
+            set { defocusSteps = value; RaisePropertyChanged(); RaisePropertyChanged(nameof(DefocusMicronsText)); SaveSettings(); }
         }
+
+        private double stepsPerMicron = 3;
+        public double StepsPerMicron {
+            get => stepsPerMicron;
+            set { stepsPerMicron = value > 0 ? value : 1; RaisePropertyChanged(); RaisePropertyChanged(nameof(DefocusMicronsText)); SaveSettings(); }
+        }
+
+        /// <summary>Read-only info: converts defocus steps to microns for comparison with SkyWave.</summary>
+        public string DefocusMicronsText => stepsPerMicron > 0
+            ? $"= {(defocusSteps / stepsPerMicron):F0} µm"
+            : "";
 
         private int defocusDirection = 1;
         public int DefocusDirection {
@@ -240,7 +251,7 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
         private int radiusPercent = 80;
         public int RadiusPercent {
             get => radiusPercent;
-            set { radiusPercent = Math.Max(10, Math.Min(85, value)); RaisePropertyChanged(); SaveSettings(); RebuildMap(); }
+            set { radiusPercent = value; RaisePropertyChanged(); SaveSettings(); RebuildMap(); }
         }
 
         private int settleSeconds = 3;
@@ -948,6 +959,7 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                 accessor.SetValueString(SETTINGS_PREFIX + "TargetRA", TargetRA);
                 accessor.SetValueString(SETTINGS_PREFIX + "TargetDec", TargetDec);
                 accessor.SetValueInt32(SETTINGS_PREFIX + "DefocusSteps", DefocusSteps);
+                accessor.SetValueDouble(SETTINGS_PREFIX + "StepsPerMicron", StepsPerMicron);
                 accessor.SetValueInt32(SETTINGS_PREFIX + "DefocusDirection", DefocusDirection);
                 accessor.SetValueDouble(SETTINGS_PREFIX + "ExposureTime", ExposureTime);
                 accessor.SetValueString(SETTINGS_PREFIX + "FilterName", FilterName);
@@ -976,6 +988,7 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                 targetRA = accessor.GetValueString(SETTINGS_PREFIX + "TargetRA", targetRA);
                 targetDec = accessor.GetValueString(SETTINGS_PREFIX + "TargetDec", targetDec);
                 defocusSteps = accessor.GetValueInt32(SETTINGS_PREFIX + "DefocusSteps", defocusSteps);
+                stepsPerMicron = accessor.GetValueDouble(SETTINGS_PREFIX + "StepsPerMicron", stepsPerMicron);
                 defocusDirection = accessor.GetValueInt32(SETTINGS_PREFIX + "DefocusDirection", defocusDirection);
                 exposureTime = accessor.GetValueDouble(SETTINGS_PREFIX + "ExposureTime", exposureTime);
                 filterName = accessor.GetValueString(SETTINGS_PREFIX + "FilterName", filterName);
