@@ -10,7 +10,7 @@ A [N.I.N.A.](https://nighttime-imaging.eu/) plugin that automates telescope coll
 - [How it works](#how-it-works)
 - [Two tools, one workflow](#two-tools-one-workflow)
   - [NINA Plugin](#nina-plugin--collimation-helper-for-skywave)
-  - [Web Tool (HTML)](#web-tool-html--for-non-nina-users)
+  - [Browser-based Collimation Helper](#browser-based-collimation-helper--if-you-dont-use-the-plugin)
 - [Star presets](#star-presets)
 - [Tips](#tips)
 - [Requirements](#requirements)
@@ -54,13 +54,21 @@ The plugin handles everything automatically — slew, center, filter change, opt
 9. **Save** a 16-bit monochrome FITS with proper headers (FOCALLEN, XPIXSZ, XBINNING, etc.) to your configured output folder
 10. **Refocus** — always returns the focuser and restores the original filter, even on failure or cancel
 
-<img width="1182" height="719" alt="Collimation Helper for SkyWave" src="https://github.com/joergs-git/Skywave-Collimation-helper-for-NINA/blob/main/astrocirular-skw-nina-helper.png" />
+## Screenshots
+
+**Plugin settings and description in NINA:**
+
+![Plugin settings and description](pluginsettings.png)
+
+**Running a collimation capture — sensor map with ring positions and live camera preview:**
+
+![Plugin running a collimation capture](pluginrun.png)
 
 ## Two tools, one workflow
 
 ### NINA Plugin — Collimation Helper for SkyWave
 
-A native N.I.N.A. plugin that does everything inside NINA — no external tools required:
+The recommended way. A native N.I.N.A. plugin that does everything inside NINA — no external tools required:
 
 - **Dockable tool panel** in NINA's imaging tab — click "Run Collimation" and it does everything
 - **Star picker** with 22 presets (mag 2–5, all seasons) and **"Find Best"** auto-selection based on time, location, and optical setup
@@ -108,14 +116,14 @@ A native N.I.N.A. plugin that does everything inside NINA — no external tools 
 5. Click **Run Collimation**
 6. The integrated FITS appears in your output folder, ready for SkyWave
 
-### Web Tool (HTML) — for non-NINA users
+### Browser-based Collimation Helper — if you don't use the plugin
 
-A standalone browser-based tool that generates N.I.N.A. sequence files and PixInsight scripts. This tool remains available for users who prefer to build their own sequences or don't use the plugin:
+If you prefer to build your own sequences manually, or don't use N.I.N.A., there is also a standalone browser-based tool that calculates the same circular ring pattern and generates ready-to-use sequence files. It does roughly the same math as the plugin, but the plugin is far more convenient for NINA users since it handles the entire capture-to-integration workflow automatically.
 
-- **[Live demo](https://joergs-git.github.io/Skywave-Collimation-helper-for-NINA/)** — runs entirely in your browser
+- **[Open in browser](https://joergs-git.github.io/Skywave-Collimation-helper-for-NINA/)** — runs entirely in your browser, no installation needed
 - Generates downloadable `.json` for N.I.N.A. Advanced Sequencer
 - Generates downloadable `.js` PixInsight integration script
-- Star finder with altitude/LST calculator
+- Star finder with altitude/LST calculator and the same 22 star presets
 - Magnitude advisor based on your optical setup
 
 ## Star presets
@@ -129,7 +137,7 @@ A standalone browser-based tool that generates N.I.N.A. sequence files and PixIn
 | ξ Cep | 22:03:47.5 | +64:37:41 | 4.29 | Fall | Away from Milky Way |
 | α Cam | 04:54:03.0 | +66:20:34 | 4.29 | Winter | Recommended! Sparsest field in the sky |
 
-See the full list of 22 presets (mag 2–5) in the [web tool](https://joergs-git.github.io/Skywave-Collimation-helper-for-NINA/).
+See the full list of 22 presets (mag 2–5) in the [browser-based helper](https://joergs-git.github.io/Skywave-Collimation-helper-for-NINA/).
 
 ## Tips
 
