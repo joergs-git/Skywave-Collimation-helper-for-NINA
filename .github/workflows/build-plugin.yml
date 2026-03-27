@@ -39,18 +39,18 @@ jobs:
       - name: Package installer zip
         shell: pwsh
         run: |
-          $stagingDir = "staging/CollimationHelper.SkyWave"
+          $stagingDir = "staging"
           New-Item -ItemType Directory -Force -Path $stagingDir
           Copy-Item "NINA.AstroCircular.SkyWaver/bin/x64/Release/NINA.CollimationHelper.SkyWave.dll" $stagingDir
-          Copy-Item "install.bat" "staging/"
-          Copy-Item "uninstall.bat" "staging/"
+          Copy-Item "install.bat" $stagingDir
+          Copy-Item "uninstall.bat" $stagingDir
           @"
           Collimation Helper for SkyWave — v1.0.0
           ========================================
 
           INSTALL:  Double-click install.bat (close NINA first!)
-          MANUAL:   Copy the CollimationHelper.SkyWave folder to
-                    %localappdata%\NINA\3\Plugins\
+          MANUAL:   Copy NINA.CollimationHelper.SkyWave.dll to
+                    %localappdata%\NINA\3\Plugins\CollimationHelper.SkyWave\
 
           UNINSTALL: Double-click uninstall.bat
 
