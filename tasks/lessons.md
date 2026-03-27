@@ -1,5 +1,11 @@
 # Lessons Learned
 
+## [2026-03-27] — Always verify git identity in temporary clones
+- **Mistake:** Committed in /tmp/nina.plugin.manifests with system identity (real name + hostname)
+- **Root cause:** Fresh clone had no repo-level git config and no global config was set
+- **Rule:** Always set global git config to joergsflow. Before committing in any new clone or fork, verify with `git config user.name`. Fix with --amend --reset-author if it slips through.
+- **Applies to:** Any work in temporary directories, forks, or fresh clones
+
 ## [2026-03-22] — No plate-solving when defocused
 - **Mistake:** Considered adding plate-solve on ring positions
 - **Root cause:** Defocused images can't be plate-solved, and precise centering isn't needed for collimation positions

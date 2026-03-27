@@ -11,51 +11,28 @@
 - [x] Options page with settings UI
 - [x] Installer fixed for NINA 3.x versioned plugin path (Plugins\3.0.0\)
 - [x] Plugin loads and displays in NINA
-- [x] v0.2.0: Dockable panel (SkyWave Collimator Helper) in imaging tab
-- [x] v0.2.0: One-click Run Collimation with direct equipment control
+- [x] v0.2.0: Dockable panel with one-click Run Collimation
 - [x] v0.2.0: Star picker with 16 presets and Find Best
-- [x] v0.2.0: Settings persistence via PluginOptionsAccessor
-- [x] v0.2.0: Folder browser button for output directory
-- [x] v0.2.0: Sensor map with position progress indicators (grey/red/green)
-- [x] v0.2.0: Camera preview with auto-stretch
-- [x] v0.2.0: Plate-solve centering (L filter) for first slew
-- [x] v0.2.0: Target filter switch after defocus
-- [x] v0.2.0: ~~Slow mode~~ removed — slew-and-center makes no sense for off-center ring positions
-- [x] v0.2.0: Self-contained FITS pipeline (RawFitsWriter/Reader, no NINA format dependency)
-- [x] v0.2.0: Rectangular crop (no circular masking)
-- [x] v0.2.0: All toggles in dockable panel with visible labels
-- [x] v0.2.0: Equipment auto-read from NINA profile
-- [x] v0.2.0: WPF geometry icon
+- [x] v0.2.0: Sensor map, camera preview, all toggles, equipment auto-read
+- [x] v0.2.0: Self-contained FITS pipeline (RawFitsWriter/Reader)
+- [x] v1.0.0: MAX stacking (replaced average)
+- [x] v1.0.0: 22 star presets (expanded from 16, down to mag 2)
+- [x] v1.0.0: Steps/µm readout, magnitude advisor
+- [x] v1.0.0: Crop safety margin tripled to 300px
+- [x] v1.0.0: README rewrite with SkyWave background, screenshots, settings table
+- [x] v1.0.0: Renamed "Web Tool" to "Browser-based Collimation Helper"
+- [x] v1.0.0: Stable release v1.0.0 on GitHub
+- [x] v1.0.0: Manifest PR submitted to isbeorn/nina.plugin.manifests (#383)
+- [x] v1.0.0: Global git identity locked to joergsflow
 
-## Open — Go Live (v0.3.0)
-- [ ] **Publish to NINA plugin repository** — manifest.json is prepared in
-  repo root with placeholder SHA256. To go live:
-  1. Create stable release tag `v0.2.0`
-  2. Download zip, generate SHA256 checksum
-  3. Update manifest.json with checksum and stable download URL
-  4. Fork github.com/isbeorn/nina.plugin.manifests
-  5. Place at `manifests/c/CollimationHelperForSkyWave/manifest.0.2.0.1.json`
-  6. Submit PR (validation: `npm install && node gather.js`)
-- [ ] **PixInsight Tools integration** — Optional integration path using
-  isbeorn's PixInsight Tools plugin for stacking
+## Open — Awaiting External
+- [ ] **NINA manifest PR review** — isbeorn/nina.plugin.manifests#383, awaiting merge by NINA maintainers
+
+## Open — Future Enhancements
+- [ ] **PixInsight Tools integration** — Optional integration path using isbeorn's PixInsight Tools plugin for stacking
 - [ ] **Verify output files** — Confirm integrated FITS loads correctly in SkyWave
-- [x] ~~Test slow mode~~ — removed, not applicable (ring positions are intentionally off-center)
-
-## Open — UI Polish (v0.3.1)
-- [ ] **Stacked image thumbnail in completion popup** — Show a preview of the
-  integrated FITS in the "Finished stacking" dialog. Load the output file,
-  auto-stretch, and display as a thumbnail alongside the completion message.
-- [ ] **Optional rectangular crop** — Toggle to crop the integrated image to the
-  inscribed rectangle of the ring pattern, reducing file size. Pure pixel crop
-  only (no interpolation). Applied after stacking, before FITS write.
-
-## Open — Notifications (v0.4.0)
-- [ ] **Pushover via Ground Station** — Optional notifications using Dale Ghent's
-  Ground Station plugin. Two notification points:
-  1. When the autofocus prompt appears (so user knows to check NINA)
-  2. When the collimation job completes (success or failure)
-  - Must be an opt-in toggle (off by default)
-  - Research Ground Station's API: how plugins send notifications through it
+- [ ] **Stacked image thumbnail** — Show preview of integrated FITS in completion popup
+- [ ] **Pushover via Ground Station** — Optional notifications (autofocus prompt, job complete)
 
 ## Open — HTML Tool Fixes
 - [ ] Fix TakeExposure.ExposureCount: 0 → 1 in generated NINA JSON
@@ -65,16 +42,14 @@
 ## Key Learnings
 - NINA 3.x plugins must go in `Plugins\3.0.0\` (one-time migration from root)
 - ResourceDictionary: use programmatic pack URI loading, NOT x:Class/InitializeComponent
-  (but dockable DataTemplates CAN use x:Class — different MEF export path)
 - No WPF Hyperlink elements (crash plugin load without RequestNavigate handler)
 - FilterInfo constructor needs (string, int, short) — cast position to short
 - BinningMode constructor needs (short, short) — cast binning to short
-- Filter switch must look up by name from profile's FilterWheelFilters list
-- Options page Settings object is disconnected from panel VM — all persisted
-  settings should be on the panel VM via PluginOptionsAccessor
+- Options page Settings object is disconnected from panel VM — use PluginOptionsAccessor
 - NINA's SaveToDisk may change filenames/formats — use own RawFitsWriter instead
 - CheckBox Content text is invisible in NINA's dark theme — use explicit TextBlock
 
 ## Results
 - v0.1.0 (2026-03-22): Plugin scaffolding, sequence instructions, CI, installer
 - v0.2.0 (2026-03-23): Dockable panel, direct equipment control, self-contained FITS pipeline
+- v1.0.0 (2026-03-27): First stable release — MAX stacking, 22 stars, manifest PR submitted
