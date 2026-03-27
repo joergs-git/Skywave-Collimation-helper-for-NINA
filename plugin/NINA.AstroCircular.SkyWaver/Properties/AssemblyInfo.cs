@@ -15,8 +15,8 @@ using System.Runtime.InteropServices;
 [assembly: Guid("b7e3f1a2-9c4d-4e8b-a6f5-1d2c3b4a5e6f")]
 
 // Version: MAJOR.MINOR.PATCH.CHANNEL (9=release, 2=beta, 1=nightly)
-[assembly: AssemblyVersion("0.2.0.1")]
-[assembly: AssemblyFileVersion("0.2.0.1")]
+[assembly: AssemblyVersion("1.0.0.9")]
+[assembly: AssemblyFileVersion("1.0.0.9")]
 
 // NINA plugin metadata
 [assembly: AssemblyMetadata("MinimumApplicationVersion", "3.0.0.9001")]
@@ -34,7 +34,7 @@ using System.Runtime.InteropServices;
 3. Switch to the target filter and optionally run autofocus
 4. Defocus the telescope by a configurable number of focuser steps
 5. Capture exposures at N positions around a circular ring pattern covering the full sensor plane
-6. Natively integrate sub-frames (average, crop, bin 2x) into a single FITS
+6. MAX-stack sub-frames into a single FITS (each pixel keeps its maximum value)
 7. Save the SkyWave-ready FITS to your configured watch folder
 8. Return the focuser to its original position
 

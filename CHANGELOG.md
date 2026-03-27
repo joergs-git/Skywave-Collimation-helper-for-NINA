@@ -4,11 +4,29 @@ All notable changes to Collimation Helper for SkyWave will be documented in this
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [0.1.1] - 2026-03-26
+## [1.0.0] - 2026-03-27
+
+First stable release for the official N.I.N.A. plugin repository.
+
+### Added
+- MAX stacking (each pixel keeps its maximum value across all frames)
+- 22 star presets (mag 2–5, all seasons, mid-northern latitudes)
+- "Find Best" star auto-selection based on time, location, and optical setup
+- Magnitude advisor targeting ~60% ADU fill
+- Steps/µm readout for focuser calibration
+- Optional crop to ring pattern + 300px safety margin
+- Optional autofocus before defocusing
+- Camera preview with robust auto-stretch (median + MAD)
+- Live sensor map with ring position progress
+- Full cancellation support with focus/filter restoration
+- Browser-based collimation helper for non-NINA users
+- Plugin screenshots in README
 
 ### Changed
-- Tripled crop safety margin from 100px to 300px — defocused stars on long sensor sides were getting cut off
-- Updated README with comprehensive feature documentation, SkyWave background section, settings table, and latest tips
+- Stacking mode changed from average to MAX — preserves every donut at full brightness
+- Crop safety margin tripled from 100px to 300px for defocused stars on long sensor sides
+- Star catalog expanded from 16 to 22 presets with brighter stars (down to mag 2)
+- Renamed "Web Tool" / "Live demo" to "Browser-based Collimation Helper"
 
 ## [0.1.0] - 2026-03-22
 
