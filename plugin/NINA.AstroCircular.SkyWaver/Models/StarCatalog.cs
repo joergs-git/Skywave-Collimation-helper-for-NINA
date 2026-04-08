@@ -9,7 +9,7 @@ namespace NINA.AstroCircular.SkyWaver.Models {
     /// Embedded catalog of bright, isolated stars suitable for SKW collimation.
     /// Combines the original plugin presets with the SkyWave "Collimation Stars" list
     /// covering all seasons and a wide range of declinations.
-    /// v2.0.0: 80 stars total (was 23 in v1.0.0).
+    /// v2.0.0: 80 northern + equatorial stars. v2.0.1: added 25 southern hemisphere stars (Dec -25° to -79°).
     /// </summary>
     public static class StarCatalog {
 
@@ -120,6 +120,45 @@ namespace NINA.AstroCircular.SkyWaver.Models {
             new StarPreset { Name = "Ionnina",    RA = "18:35:12.4", Dec = "-8:14:38.7", Magnitude = 3.85, Season = "fa", Constellation = "Sct", Note = "α Sct — HR 6973, southern" },
             new StarPreset { Name = "Albali",     RA = "20:47:40.5", Dec = "-9:29:44.8", Magnitude = 3.77, Season = "fa", Constellation = "Aqr", Note = "ε Aqr — HR 7950" },
             new StarPreset { Name = "Nashira",    RA = "21:40:05.5", Dec = "-16:39:44.3", Magnitude = 3.68, Season = "fa", Constellation = "Cap", Note = "γ Cap — HR 8278, southern" },
+
+            // ════════════════════════════════════════════════════════════════
+            //  SOUTHERN HEMISPHERE — Dec -25° to -79°
+            //  Isolated stars for southern observers, covering all seasons.
+            //  Season labels follow RA convention (same as northern section);
+            //  "Find Best" computes actual altitude for any observer location.
+            // ════════════════════════════════════════════════════════════════
+
+            // -- Southern circumpolar (Dec < -60°) --
+            new StarPreset { Name = "β Hyi",      RA = "0:25:45.1",  Dec = "-77:15:15.3", Magnitude = 2.80, Season = "wi", Constellation = "Hyi", Note = "Beta Hyi — HR 98, extremely isolated near south pole" },
+            new StarPreset { Name = "α Hyi",      RA = "1:58:46.2",  Dec = "-61:34:11.5", Magnitude = 2.86, Season = "wi", Constellation = "Hyi", Note = "Alpha Hyi — HR 591, head of Hydrus" },
+            new StarPreset { Name = "γ Hyi",      RA = "3:47:14.3",  Dec = "-74:14:20.3", Magnitude = 3.24, Season = "wi", Constellation = "Hyi", Note = "Gamma Hyi — HR 1208, deep south, sparse field" },
+            new StarPreset { Name = "α Ret",      RA = "4:14:25.5",  Dec = "-62:28:25.8", Magnitude = 3.33, Season = "wi", Constellation = "Ret", Note = "Alpha Ret — HR 1336, very sparse Reticulum field" },
+            new StarPreset { Name = "β Ret",      RA = "3:44:12.1",  Dec = "-64:48:24.6", Magnitude = 3.85, Season = "wi", Constellation = "Ret", Note = "Beta Ret — HR 1175, sparse field near α Ret" },
+            new StarPreset { Name = "α Pic",      RA = "6:48:11.5",  Dec = "-61:56:29.0", Magnitude = 3.27, Season = "sp", Constellation = "Pic", Note = "Alpha Pic — HR 2550, clean Pictor field" },
+            new StarPreset { Name = "α Aps",      RA = "14:47:51.7", Dec = "-79:02:41.0", Magnitude = 3.83, Season = "su", Constellation = "Aps", Note = "Alpha Aps — HR 5470, near south pole, very isolated" },
+            new StarPreset { Name = "δ Pav",      RA = "20:08:43.6", Dec = "-66:10:55.4", Magnitude = 3.56, Season = "fa", Constellation = "Pav", Note = "Delta Pav — HR 7665, isolated Pavo field" },
+
+            // -- Southern mid-latitude (Dec -40° to -55°) --
+            new StarPreset { Name = "Acamar",     RA = "2:58:15.7",  Dec = "-40:18:17.0", Magnitude = 2.88, Season = "wi", Constellation = "Eri", Note = "θ Eri — HR 897, bright double (wide sep), clean field" },
+            new StarPreset { Name = "φ Eri",      RA = "2:16:30.6",  Dec = "-51:30:44.2", Magnitude = 3.56, Season = "wi", Constellation = "Eri", Note = "Phi Eri — HR 669, deep southern Eridanus" },
+            new StarPreset { Name = "χ Eri",      RA = "1:55:57.5",  Dec = "-51:36:32.0", Magnitude = 3.70, Season = "wi", Constellation = "Eri", Note = "Chi Eri — HR 566, pair with φ Eri" },
+            new StarPreset { Name = "γ Phe",      RA = "1:28:21.9",  Dec = "-43:19:05.7", Magnitude = 3.41, Season = "wi", Constellation = "Phe", Note = "Gamma Phe — HR 429, isolated Phoenix field" },
+            new StarPreset { Name = "κ Phe",      RA = "0:26:12.2",  Dec = "-43:40:47.4", Magnitude = 3.94, Season = "wi", Constellation = "Phe", Note = "Kappa Phe — HR 100, sparse field" },
+            new StarPreset { Name = "Tiaki",      RA = "22:42:40.1", Dec = "-46:53:04.5", Magnitude = 2.07, Season = "fa", Constellation = "Gru", Note = "β Gru — HR 8636, very bright, isolated Grus" },
+            new StarPreset { Name = "Al Dhanab",  RA = "21:53:55.7", Dec = "-37:21:53.5", Magnitude = 3.01, Season = "fa", Constellation = "Gru", Note = "γ Gru — HR 8353, clean field" },
+            new StarPreset { Name = "δ Gru",      RA = "22:29:16.1", Dec = "-43:29:44.0", Magnitude = 3.97, Season = "fa", Constellation = "Gru", Note = "Delta Gru — HR 8556, isolated" },
+            new StarPreset { Name = "α Hor",      RA = "4:14:00.1",  Dec = "-42:17:39.7", Magnitude = 3.86, Season = "wi", Constellation = "Hor", Note = "Alpha Hor — HR 1326, sparse Horologium" },
+            new StarPreset { Name = "β Pic",      RA = "5:47:17.1",  Dec = "-51:03:59.5", Magnitude = 3.86, Season = "wi", Constellation = "Pic", Note = "Beta Pic — HR 2020, famous debris disk star, isolated" },
+            new StarPreset { Name = "ψ Vel",      RA = "9:30:42.0",  Dec = "-40:28:00.2", Magnitude = 3.60, Season = "sp", Constellation = "Vel", Note = "Psi Vel — HR 3786, away from crowded Vela MW" },
+            new StarPreset { Name = "μ Vel",      RA = "10:46:46.2", Dec = "-49:25:12.8", Magnitude = 2.69, Season = "sp", Constellation = "Vel", Note = "Mu Vel — HR 4216, bright, sparse field" },
+            new StarPreset { Name = "φ Vel",      RA = "9:56:51.8",  Dec = "-54:34:04.0", Magnitude = 3.54, Season = "sp", Constellation = "Vel", Note = "Phi Vel — HR 3940, well isolated from MW plane" },
+
+            // -- Southern low-latitude (Dec -25° to -40°) --
+            new StarPreset { Name = "Dalim",      RA = "3:12:04.5",  Dec = "-28:59:15.4", Magnitude = 3.87, Season = "wi", Constellation = "For", Note = "α For — HR 963, sparse Fornax field" },
+            new StarPreset { Name = "Phact",      RA = "5:39:38.9",  Dec = "-34:04:26.8", Magnitude = 2.64, Season = "wi", Constellation = "Col", Note = "α Col — HR 1956, bright, clean Columba field" },
+            new StarPreset { Name = "Wazn",       RA = "5:50:57.6",  Dec = "-35:46:05.9", Magnitude = 3.12, Season = "wi", Constellation = "Col", Note = "β Col — HR 2040, pair with Phact" },
+            new StarPreset { Name = "α Pyx",      RA = "8:43:35.5",  Dec = "-33:11:11.0", Magnitude = 3.68, Season = "sp", Constellation = "Pyx", Note = "Alpha Pyx — HR 3468, isolated Pyxis" },
+            new StarPreset { Name = "ι Cen",      RA = "13:20:35.8", Dec = "-36:42:44.3", Magnitude = 2.73, Season = "su", Constellation = "Cen", Note = "Iota Cen — HR 5028, away from crowded Centaurus core" },
         };
 
         /// <summary>

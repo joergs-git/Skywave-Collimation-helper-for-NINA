@@ -4,6 +4,13 @@ All notable changes to Collimation Helper for SkyWave will be documented in this
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.0.1] - 2026-04-08
+
+### Added
+- **26 southern hemisphere collimation stars** (Dec -25° to -79°) — catalog now covers both hemispheres with 106 stars total
+- Southern circumpolar targets near the south celestial pole (β Hyi, γ Hyi, α Aps at Dec -77° to -79°)
+- Stars in Hydrus, Reticulum, Phoenix, Grus, Columba, Pictor, Vela, Fornax, Horologium, Pyxis, Apus, Pavo, Centaurus
+
 ## [2.0.0] - 2026-04-08
 
 ### Added

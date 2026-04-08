@@ -43,7 +43,7 @@ The plugin handles everything automatically — slew, center, filter change, opt
 
 ## How it works
 
-1. **Select** an isolated star of appropriate magnitude (from 80 built-in presets or manual RA/Dec — "Find Best" auto-selects based on your optics to target ~60% ADU without overexposure)
+1. **Select** an isolated star of appropriate magnitude (from 106 built-in presets or manual RA/Dec — "Find Best" auto-selects based on your optics to target ~60% ADU without overexposure)
 2. **Switch to L filter** and **plate-solve & center** on the star (in focus)
 3. **Switch to target filter** (e.g. R, G, B) for capture
 4. **Optionally run autofocus** — a dialog asks before defocusing (works with NINA's built-in AF or Hocusfocus)
@@ -71,7 +71,7 @@ The plugin handles everything automatically — slew, center, filter change, opt
 The recommended way. A native N.I.N.A. plugin that does everything inside NINA — no external tools required:
 
 - **Dockable tool panel** in NINA's imaging tab — click "Run Collimation" and it does everything
-- **Star picker** with 80 presets (mag 2–5, all seasons) and **"Find Best"** auto-selection based on time, location, and optical setup
+- **Star picker** with 106 presets (mag 2–5, all seasons) and **"Find Best"** auto-selection based on time, location, and optical setup
 - **Magnitude advisor** — computes ideal star brightness from your focal length, aperture, exposure, and gain to target ~60% ADU fill
 - **µm/step readout** — enter your focuser's microns-per-step and see real defocus distance in µm
 - **Live sensor map** showing ring positions with progress (grey=pending, red=active, green=done)
@@ -123,12 +123,12 @@ If you prefer to build your own sequences manually, or don't use N.I.N.A., there
 - **[Open in browser](https://joergs-git.github.io/Skywave-Collimation-helper-for-NINA/)** — runs entirely in your browser, no installation needed
 - Generates downloadable `.json` for N.I.N.A. Advanced Sequencer
 - Generates downloadable `.js` PixInsight integration script
-- Star finder with altitude/LST calculator and the same 80 star presets
+- Star finder with altitude/LST calculator and the same 106 star presets
 - Magnitude advisor based on your optical setup
 
 ## Star presets
 
-80 collimation stars covering all seasons and declinations from -20° to +77°, sourced from the SkyWave "Collimation Stars" catalog plus hand-picked isolated northern-sky targets. Each preset includes constellation, Bayer/Flamsteed designation, visual magnitude, and catalog references.
+106 collimation stars covering **both hemispheres** — declinations from -79° (near the south celestial pole) to +78° (near Polaris). Sourced from the SkyWave "Collimation Stars" catalog plus hand-picked isolated targets for northern and southern observers. Each preset includes constellation, Bayer/Flamsteed designation, visual magnitude, and catalog references.
 
 **Highlights by season:**
 
@@ -144,6 +144,10 @@ If you prefer to build your own sequences manually, or don't use N.I.N.A., there
 | Zubeneschamali | 15:17:00.4 | -09:23:00 | 2.61 | Summer | β Lib — bright, southern |
 | Alfirk | 21:28:39.6 | +70:33:39 | 3.23 | Fall | β Cep — bright and well isolated |
 | γ Sge | 19:58:45.4 | +19:29:32 | 3.47 | Fall | Gamma Sge — lower Dec |
+| β Hyi | 00:25:45.1 | -77:15:15 | 2.80 | S. Circumpolar | Near south pole, extremely isolated |
+| α Ret | 04:14:25.5 | -62:28:26 | 3.33 | S. Winter | Very sparse Reticulum field |
+| Tiaki | 22:42:40.1 | -46:53:05 | 2.07 | S. Fall | β Gru — very bright, isolated |
+| Phact | 05:39:38.9 | -34:04:27 | 2.64 | S. Winter | α Col — bright Columba |
 
 The **"Find Best"** button auto-selects the optimal star based on your location, time, and optical setup.
 
