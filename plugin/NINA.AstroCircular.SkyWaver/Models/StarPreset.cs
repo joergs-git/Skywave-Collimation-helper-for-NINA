@@ -9,9 +9,12 @@ namespace NINA.AstroCircular.SkyWaver.Models {
         public string Dec { get; set; }  // D:M:S format
         public double Magnitude { get; set; }
         public string Season { get; set; } // sp, su, fa, wi
+        public string Constellation { get; set; } // IAU abbreviation (e.g. "Dra", "UMa")
         public string Note { get; set; }
 
-        /// <summary>Display label for ComboBox: "Name (mag X.X)"</summary>
-        public string DisplayLabel => $"{Name}  (mag {Magnitude:F1})";
+        /// <summary>Display label for ComboBox: "Name (Constellation, mag X.X)"</summary>
+        public string DisplayLabel => string.IsNullOrEmpty(Constellation)
+            ? $"{Name}  (mag {Magnitude:F1})"
+            : $"{Name}  ({Constellation}, mag {Magnitude:F1})";
     }
 }

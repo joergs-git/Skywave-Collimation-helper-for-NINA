@@ -17,7 +17,7 @@
             </Button>
 
             <TextBlock Margin="0,2,0,0" FontSize="10" Foreground="#888" TextWrapping="Wrap"
-                       Text="v0.2.0 by joergsflow | Collimation Helper for SkyWave | innovationsforesight.com/aitelescopecollimation" />
+                       Text="v2.0.0 by joergsflow | Collimation Helper for SkyWave | innovationsforesight.com/aitelescopecollimation" />
         </StackPanel>
     </DataTemplate>
 

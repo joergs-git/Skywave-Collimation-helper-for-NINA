@@ -63,13 +63,13 @@
 
                 <TextBlock Grid.Row="0" Grid.Column="0" Text="Defocus" VerticalAlignment="Center" FontSize="11" />
                 <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding DefocusSteps, UpdateSourceTrigger=PropertyChanged}" Margin="2,1" FontSize="11"
-                         ToolTip="Defocus in focuser steps" />
-                <TextBlock Grid.Row="0" Grid.Column="2" Text="St/µm" VerticalAlignment="Center" FontSize="11" Margin="4,0,0,0"
-                           ToolTip="Steps per micron (e.g. ZWO EAF = 3)" />
-                <TextBox Grid.Row="0" Grid.Column="3" Text="{Binding StepsPerMicron, UpdateSourceTrigger=PropertyChanged}" Margin="2,1" FontSize="11"
-                         ToolTip="Steps per micron — check your focuser specs" />
+                         ToolTip="Defocus in focuser steps — must match the value calculated by SkyWave for your setup.&#x0a;&#x0a;How to calculate:&#x0a;1. Run SkyWave to get the required defocus in microns&#x0a;2. Divide by your focuser's µm/step ratio&#x0a;3. Enter the result here&#x0a;&#x0a;Example: SkyWave says 7326 µm ÷ 3 µm/step = 2442 steps" />
+                <TextBox Grid.Row="0" Grid.Column="3" Text="{Binding MicronsPerStep, UpdateSourceTrigger=PropertyChanged}" Margin="2,1" FontSize="11"
+                         ToolTip="Microns of focuser travel per step — depends on your focuser + OAZ combination.&#x0a;&#x0a;How to measure:&#x0a;1. Move focuser out by e.g. 10000 steps&#x0a;2. Measure the distance travelled from the scope backplate&#x0a;3. Divide distance (µm) by number of steps&#x0a;&#x0a;Example: ZWO EAF + FeatherTouch OAZ on RC12 ≈ 3 µm/step" />
+                <TextBlock Grid.Row="0" Grid.Column="2" Text="µm/st" VerticalAlignment="Center" FontSize="11" Margin="4,0,0,0"
+                           ToolTip="Microns per step — specific to your focuser + OAZ combination" />
                 <TextBlock Grid.Row="0" Grid.Column="4" Grid.ColumnSpan="2" Text="{Binding DefocusMicronsText}" VerticalAlignment="Center" FontSize="11" Margin="4,0,0,0"
-                           Foreground="#888" ToolTip="Computed defocus in microns — compare with SkyWave" />
+                           Foreground="#888" ToolTip="Computed defocus in microns — compare with the value from SkyWave" />
 
                 <TextBlock Grid.Row="1" Grid.Column="0" Text="Dir" VerticalAlignment="Center" FontSize="11" />
                 <ComboBox Grid.Row="1" Grid.Column="1" SelectedIndex="{Binding DefocusDirectionIndex}" Margin="2,1" FontSize="11">
@@ -94,6 +94,12 @@
                 <TextBlock Grid.Row="3" Grid.Column="4" Text="Settle" VerticalAlignment="Center" FontSize="11" Margin="4,0,0,0" />
                 <TextBox Grid.Row="3" Grid.Column="5" Text="{Binding SettleSeconds, UpdateSourceTrigger=PropertyChanged}" Margin="2,1" FontSize="11" />
             </Grid>
+
+            <!-- Defocus setup hint -->
+            <Border Background="#1a1f2e" BorderBrush="#2a3050" BorderThickness="1" CornerRadius="3" Margin="0,0,0,4" Padding="6,4">
+                <TextBlock FontSize="9.5" Foreground="#8899bb" TextWrapping="Wrap"
+                           Text="⚙ Defocus steps must be adjusted for your setup: get the required defocus in microns from SkyWave, then divide by your focuser's µm/step ratio. To find your ratio: move the focuser e.g. 10000 steps, measure the travel distance, divide by 10000." />
+            </Border>
 
             <!-- Toggles -->
             <WrapPanel Margin="0,0,0,4">
@@ -158,7 +164,7 @@
             </Grid>
 
             <!-- Progress -->
-            <ProgressBar Value="{Binding Progress}" Minimum="0" Maximum="100" Height="4" Margin="0,0,0,2" />
+            <ProgressBar Value="{Binding Progress}" Minimum="0" Maximum="100" Height="8" Margin="0,0,0,2" />
             <TextBlock Text="{Binding StatusText}" FontSize="10" Foreground="#999" TextWrapping="Wrap" />
 
             <!-- Sensor Map + Camera Preview side by side -->
@@ -191,8 +197,8 @@
                                 </ItemsControl.ItemContainerStyle>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Grid Margin="-7,-7,0,0">
-                                            <Ellipse Width="14" Height="14" StrokeThickness="1.5">
+                                        <Grid Margin="-11,-11,0,0">
+                                            <Ellipse Width="22" Height="22" StrokeThickness="2">
                                                 <Ellipse.Stroke>
                                                     <SolidColorBrush Color="{Binding StrokeColor}" />
                                                 </Ellipse.Stroke>
@@ -200,7 +206,7 @@
                                                     <SolidColorBrush Color="{Binding FillColor}" Opacity="0.15" />
                                                 </Ellipse.Fill>
                                             </Ellipse>
-                                            <Ellipse Width="5" Height="5" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <Ellipse Width="8" Height="8" HorizontalAlignment="Center" VerticalAlignment="Center">
                                                 <Ellipse.Fill>
                                                     <SolidColorBrush Color="{Binding FillColor}" />
                                                 </Ellipse.Fill>
@@ -219,17 +225,42 @@
                     </Grid>
                 </Border>
 
-                <!-- Camera Preview — same aspect ratio as sensor map -->
+                <!-- Camera Preview — zoomable with scroll, same aspect ratio as sensor map -->
                 <Border Grid.Column="1" BorderBrush="#272d42" BorderThickness="1"
                         Background="#080a10" Margin="2,0,0,0"
                         Width="{Binding MapWidth}" Height="{Binding MapHeight}"
                         HorizontalAlignment="Center">
                     <Grid>
-                        <Image Source="{Binding LastCapturedImage}" Stretch="Uniform"
-                               HorizontalAlignment="Center" VerticalAlignment="Center"
-                               RenderOptions.BitmapScalingMode="HighQuality" />
+                        <!-- Scrollable zoom container -->
+                        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                                      PanningMode="Both">
+                            <Image Source="{Binding LastCapturedImage}" Stretch="Uniform"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   RenderOptions.BitmapScalingMode="NearestNeighbor">
+                                <Image.LayoutTransform>
+                                    <ScaleTransform ScaleX="{Binding PreviewZoom}" ScaleY="{Binding PreviewZoom}" />
+                                </Image.LayoutTransform>
+                            </Image>
+                        </ScrollViewer>
+
+                        <!-- Label + zoom controls overlay -->
                         <TextBlock Text="Last Capture" FontSize="9" Foreground="#444"
-                                   HorizontalAlignment="Left" VerticalAlignment="Top" Margin="4,2" />
+                                   HorizontalAlignment="Left" VerticalAlignment="Top" Margin="4,2"
+                                   IsHitTestVisible="False" />
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                    Margin="0,0,4,3">
+                            <Button Content="−" Command="{Binding ZoomOutCommand}" Padding="4,0" FontSize="11"
+                                    Width="20" Height="18" Background="#1a1f2e" Foreground="#8899bb"
+                                    BorderBrush="#2a3050" ToolTip="Zoom out" />
+                            <TextBlock Text="{Binding PreviewZoomText}" FontSize="9" Foreground="#666"
+                                       VerticalAlignment="Center" Margin="3,0" MinWidth="22" TextAlignment="Center" />
+                            <Button Content="+" Command="{Binding ZoomInCommand}" Padding="4,0" FontSize="11"
+                                    Width="20" Height="18" Background="#1a1f2e" Foreground="#8899bb"
+                                    BorderBrush="#2a3050" ToolTip="Zoom in" />
+                            <Button Content="1:1" Command="{Binding ZoomResetCommand}" Padding="3,0" FontSize="9"
+                                    Height="18" Margin="3,0,0,0" Background="#1a1f2e" Foreground="#8899bb"
+                                    BorderBrush="#2a3050" ToolTip="Reset zoom to fit" />
+                        </StackPanel>
                     </Grid>
                 </Border>
             </Grid>

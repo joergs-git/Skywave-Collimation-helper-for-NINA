@@ -43,11 +43,11 @@ The plugin handles everything automatically — slew, center, filter change, opt
 
 ## How it works
 
-1. **Select** an isolated star of appropriate magnitude (from 22 built-in presets or manual RA/Dec — "Find Best" auto-selects based on your optics to target ~60% ADU without overexposure)
+1. **Select** an isolated star of appropriate magnitude (from 80 built-in presets or manual RA/Dec — "Find Best" auto-selects based on your optics to target ~60% ADU without overexposure)
 2. **Switch to L filter** and **plate-solve & center** on the star (in focus)
 3. **Switch to target filter** (e.g. R, G, B) for capture
 4. **Optionally run autofocus** — a dialog asks before defocusing (works with NINA's built-in AF or Hocusfocus)
-5. **Defocus** by a configurable number of focuser steps (with steps/µm readout for your focuser)
+5. **Defocus** by a configurable number of focuser steps (with µm/step readout for your focuser)
 6. **Capture** exposures at N positions around a circular ring pattern (blind slews — no plate-solving while defocused)
 7. **MAX-stack** sub-frames — each pixel keeps its maximum value across all frames, so every defocused donut shines through without dilution
 8. **Optionally crop** the integrated image to the ring pattern bounding box + 300px safety margin
@@ -71,9 +71,9 @@ The plugin handles everything automatically — slew, center, filter change, opt
 The recommended way. A native N.I.N.A. plugin that does everything inside NINA — no external tools required:
 
 - **Dockable tool panel** in NINA's imaging tab — click "Run Collimation" and it does everything
-- **Star picker** with 22 presets (mag 2–5, all seasons) and **"Find Best"** auto-selection based on time, location, and optical setup
+- **Star picker** with 80 presets (mag 2–5, all seasons) and **"Find Best"** auto-selection based on time, location, and optical setup
 - **Magnitude advisor** — computes ideal star brightness from your focal length, aperture, exposure, and gain to target ~60% ADU fill
-- **Steps/µm readout** — enter your focuser's steps-per-micron and see real defocus distance in µm
+- **µm/step readout** — enter your focuser's microns-per-step and see real defocus distance in µm
 - **Live sensor map** showing ring positions with progress (grey=pending, red=active, green=done)
 - **Camera preview** of each captured frame with auto-stretch (median + MAD robust statistics)
 - **MAX stacking** — each pixel keeps its maximum value, preserving every donut across the field
@@ -91,7 +91,7 @@ The recommended way. A native N.I.N.A. plugin that does everything inside NINA �
 | Gain | 100 | Camera gain |
 | Offset | 0 | Camera offset/bias |
 | Defocus steps | 2442 | Focuser steps to defocus |
-| Steps/µm | 3.0 | Focuser calibration (e.g. ZWO EAF = 3.0) |
+| µm/step | 3.0 | Microns per focuser step (depends on focuser + OAZ combo) |
 | Ring positions | 8 | Number of positions on the circle |
 | Radius % | 80 | Ring radius as percentage of FOV |
 | Include center | On | Add center position as first capture |
@@ -123,21 +123,29 @@ If you prefer to build your own sequences manually, or don't use N.I.N.A., there
 - **[Open in browser](https://joergs-git.github.io/Skywave-Collimation-helper-for-NINA/)** — runs entirely in your browser, no installation needed
 - Generates downloadable `.json` for N.I.N.A. Advanced Sequencer
 - Generates downloadable `.js` PixInsight integration script
-- Star finder with altitude/LST calculator and the same 22 star presets
+- Star finder with altitude/LST calculator and the same 80 star presets
 - Magnitude advisor based on your optical setup
 
 ## Star presets
 
+80 collimation stars covering all seasons and declinations from -20° to +77°, sourced from the SkyWave "Collimation Stars" catalog plus hand-picked isolated northern-sky targets. Each preset includes constellation, Bayer/Flamsteed designation, visual magnitude, and catalog references.
+
+**Highlights by season:**
+
 | Star | RA | Dec | Mag | Season | Notes |
 |------|-----|-----|-----|--------|-------|
-| θ Boo | 14:25:11.8 | +51:51:03 | 4.05 | Spring | Very isolated, ideal near zenith 52°N |
+| Kochab | 14:50:42.3 | +74:09:20 | 2.08 | Circumpolar | β UMi — very isolated, bright |
+| α Cam | 04:54:03.0 | +66:20:34 | 4.29 | Winter | Sparsest field in the sky |
+| Menkar | 03:02:16.8 | +04:05:23 | 2.53 | Winter | α Cet — bright, low Dec |
 | κ Dra | 12:33:28.9 | +69:47:18 | 3.87 | Spring | Extremely clean field |
-| 42 Dra | 18:25:59.1 | +65:33:49 | 4.82 | Summer | Recommended! Perfect mag, extremely isolated |
-| χ Dra | 18:21:03.4 | +72:43:58 | 3.57 | Summer | Circumpolar, clean field |
-| ξ Cep | 22:03:47.5 | +64:37:41 | 4.29 | Fall | Away from Milky Way |
-| α Cam | 04:54:03.0 | +66:20:34 | 4.29 | Winter | Recommended! Sparsest field in the sky |
+| θ Boo | 14:25:11.8 | +51:51:03 | 4.05 | Spring | Very isolated, ideal near zenith 52°N |
+| Tania Australis | 10:22:19.7 | +41:30:00 | 3.05 | Spring | μ UMa — pair with Tania Borealis |
+| 42 Dra | 18:25:59.1 | +65:33:49 | 4.82 | Summer | Extremely isolated, longer exposures |
+| Zubeneschamali | 15:17:00.4 | -09:23:00 | 2.61 | Summer | β Lib — bright, southern |
+| Alfirk | 21:28:39.6 | +70:33:39 | 3.23 | Fall | β Cep — bright and well isolated |
+| γ Sge | 19:58:45.4 | +19:29:32 | 3.47 | Fall | Gamma Sge — lower Dec |
 
-See the full list of 22 presets (mag 2–5) in the [browser-based helper](https://joergs-git.github.io/Skywave-Collimation-helper-for-NINA/).
+The **"Find Best"** button auto-selects the optimal star based on your location, time, and optical setup.
 
 ## Tips
 
@@ -147,7 +155,8 @@ See the full list of 22 presets (mag 2–5) in the [browser-based helper](https:
 - **Output format:** Always 16-bit unsigned FITS with proper headers (FOCALLEN, XPIXSZ, XBINNING, etc.). Never XISF — regardless of NINA's default format setting.
 - **Sub-frames:** When "Del subs" is off, individual frames are kept in a `subframes_*` subfolder inside your output directory.
 - **Bin 2 pixel size:** If you capture at bin 2, remember that your effective pixel size doubles. Enter your native (bin 1) pixel size in NINA's camera settings — the plugin handles the FITS header math.
-- **Focuser calibration:** Use the steps/µm field to verify your defocus amount in real physical units. Check your focuser's specs — e.g. ZWO EAF is ~3 steps/µm, Moonlite is typically ~1 step/µm.
+- **Defocus steps must be adjusted for your setup:** The default 2442 steps is a reference value. To calculate the correct value: (1) run SkyWave to determine the required defocus in microns for your telescope, (2) divide by your focuser's µm/step ratio. The µm/step ratio depends on your specific focuser + OAZ combination — to find it, move the focuser out by e.g. 10000 steps, measure the physical distance travelled from the scope backplate, and divide the distance by 10000. Example: ZWO EAF + FeatherTouch OAZ on an RC12 ≈ 3 µm/step, so 7326 µm ÷ 3 = 2442 steps.
+- **Focuser calibration:** Use the µm/step field to verify your defocus amount in real physical units. The plugin multiplies steps × µm/step to show the total defocus in microns — compare this with what SkyWave requires.
 - **Blind slews:** Ring positions are reached via blind SlewToRaDec — no plate-solving while defocused. This is by design: the telescope stays defocused throughout the ring capture, and plate-solving defocused stars is unreliable.
 
 ## Requirements

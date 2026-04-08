@@ -4,6 +4,22 @@ All notable changes to Collimation Helper for SkyWave will be documented in this
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.0.0] - 2026-04-08
+
+### Added
+- **80 collimation star presets** — expanded from 22 to 80 stars covering all seasons and declinations from -20° to +77°, using the curated SkyWave "Collimation Stars" list plus existing plugin presets
+- Constellation field on each star preset — ComboBox now shows "Name (Constellation, mag X.X)" for easier identification
+- Defocus setup hint banner in the UI explaining how to calculate the correct defocus steps from SkyWave's micron value and the focuser's µm/step ratio
+- Detailed tooltips on Defocus, µm/step, and microns display fields with step-by-step calculation instructions
+
+### Changed
+- **Doubled sensor map and camera preview size** — both panels now 600px max width (was 300px), position dots scaled up proportionally, progress bar doubled
+- **Zoomable camera preview** — zoom in up to 4× to inspect defocused donut detail while the routine runs, with +/−/1:1 controls and scroll-to-pan
+- Star catalog now organized by season (Winter/Spring/Summer/Fall) with circumpolar stars at the top
+- "Find Best" star selection benefits from 4× larger catalog — better coverage at any time of year
+- **Focuser ratio corrected from "steps/µm" to "µm/step"** — the value represents microns of travel per focuser step, which depends on the specific focuser + OAZ combination (e.g. ZWO EAF + FeatherTouch OAZ ≈ 3 µm/step). Formula is now `steps × µm/step = total defocus µm`
+- Preview thumbnail resolution doubled to 800px for crisp zoom
+
 ## [1.0.1] - 2026-03-27
 
 ### Fixed

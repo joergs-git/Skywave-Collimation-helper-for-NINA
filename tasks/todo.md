@@ -24,6 +24,10 @@
 - [x] v1.0.0: Stable release v1.0.0 on GitHub
 - [x] v1.0.0: Manifest PR submitted to isbeorn/nina.plugin.manifests (#383)
 - [x] v1.0.0: Global git identity locked to joergsflow
+- [x] v2.0.0: Star catalog expanded from 22 to 80 presets (SkyWave "Collimation Stars" CSV + originals)
+- [x] v2.0.0: Constellation field added to StarPreset, shown in ComboBox
+- [x] v2.0.0: Defocus steps hint banner + detailed tooltips for setup guidance
+- [x] v2.0.0: README, CHANGELOG updated with v2.0.0 changes
 
 ## Open — Awaiting External
 - [ ] **NINA manifest PR review** — isbeorn/nina.plugin.manifests#383, awaiting merge by NINA maintainers
@@ -53,3 +57,4 @@
 - v0.1.0 (2026-03-22): Plugin scaffolding, sequence instructions, CI, installer
 - v0.2.0 (2026-03-23): Dockable panel, direct equipment control, self-contained FITS pipeline
 - v1.0.0 (2026-03-27): First stable release — MAX stacking, 22 stars, manifest PR submitted
+- v2.0.0 (2026-04-08): 80 collimation star presets, constellation labels, defocus setup guidance

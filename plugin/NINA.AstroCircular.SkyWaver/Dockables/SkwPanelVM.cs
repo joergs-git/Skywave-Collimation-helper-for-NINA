@@ -87,6 +87,9 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
             CancelCommand = new RelayCommand((o) => Cancel());
             BrowseFolderCommand = new RelayCommand((o) => BrowseFolder());
             FindBestStarCommand = new RelayCommand((o) => FindBestStar());
+            ZoomInCommand = new RelayCommand((o) => ZoomIn());
+            ZoomOutCommand = new RelayCommand((o) => ZoomOut());
+            ZoomResetCommand = new RelayCommand((o) => ZoomReset());
 
             // Load settings — safe even without devices
             try { LoadSettings(); } catch (Exception ex) {
@@ -162,15 +165,20 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
             set { defocusSteps = value; RaisePropertyChanged(); RaisePropertyChanged(nameof(DefocusMicronsText)); SaveSettings(); }
         }
 
-        private double stepsPerMicron = 3;
-        public double StepsPerMicron {
-            get => stepsPerMicron;
-            set { stepsPerMicron = value > 0 ? value : 1; RaisePropertyChanged(); RaisePropertyChanged(nameof(DefocusMicronsText)); SaveSettings(); }
+        private double micronsPerStep = 3;
+        /// <summary>
+        /// Microns of travel per focuser step. Depends on your specific focuser + OAZ combination.
+        /// To measure: move N steps (e.g. 10000), measure physical distance from scope backplate,
+        /// divide distance by N. Example: ZWO EAF + FeatherTouch OAZ on RC12 ≈ 3 µm/step.
+        /// </summary>
+        public double MicronsPerStep {
+            get => micronsPerStep;
+            set { micronsPerStep = value > 0 ? value : 0.1; RaisePropertyChanged(); RaisePropertyChanged(nameof(DefocusMicronsText)); SaveSettings(); }
         }
 
         /// <summary>Read-only info: converts defocus steps to microns for comparison with SkyWave.</summary>
-        public string DefocusMicronsText => stepsPerMicron > 0
-            ? $"= {(defocusSteps / stepsPerMicron):F0} µm"
+        public string DefocusMicronsText => micronsPerStep > 0
+            ? $"= {(defocusSteps * micronsPerStep):F0} µm"
             : "";
 
         private int defocusDirection = 1;
@@ -309,13 +317,13 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
         }
 
         // Map canvas dimensions — dynamically sized
-        private double mapWidth = 280;
+        private double mapWidth = 560;
         public double MapWidth {
             get => mapWidth;
             set { mapWidth = value; RaisePropertyChanged(); }
         }
 
-        private double mapHeight = 200;
+        private double mapHeight = 400;
         public double MapHeight {
             get => mapHeight;
             set { mapHeight = value; RaisePropertyChanged(); }
@@ -349,9 +357,9 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
             double fl = 1946;
             try { fl = profileService?.ActiveProfile?.TelescopeSettings?.FocalLength ?? 1946; if (fl <= 0) fl = 1946; } catch { }
 
-            // Set map dimensions to match sensor aspect ratio (fit within 300px max)
+            // Set map dimensions to match sensor aspect ratio (fit within 600px max)
             double sensorAspect = sensorW / sensorH;
-            double maxW = 300;
+            double maxW = 600;
             if (sensorAspect >= 1) {
                 MapWidth = maxW;
                 MapHeight = maxW / sensorAspect;
@@ -416,6 +424,26 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
             set { lastCapturedImage = value; RaisePropertyChanged(); }
         }
 
+        // ── Preview Zoom ──
+
+        private double previewZoom = 1.0;
+        /// <summary>Zoom level for the camera preview (1.0 = fit, up to 4.0 = 4x pixel zoom).</summary>
+        public double PreviewZoom {
+            get => previewZoom;
+            set { previewZoom = Math.Max(1.0, Math.Min(4.0, value)); RaisePropertyChanged(); RaisePropertyChanged(nameof(PreviewZoomText)); }
+        }
+
+        /// <summary>Read-only display text for current zoom level.</summary>
+        public string PreviewZoomText => previewZoom > 1.01 ? $"{previewZoom:F1}×" : "Fit";
+
+        public ICommand ZoomInCommand { get; }
+        public ICommand ZoomOutCommand { get; }
+        public ICommand ZoomResetCommand { get; }
+
+        private void ZoomIn() { PreviewZoom += 0.5; }
+        private void ZoomOut() { PreviewZoom -= 0.5; }
+        private void ZoomReset() { PreviewZoom = 1.0; }
+
         /// <summary>
         /// Create a stretched thumbnail from image data for the preview panel.
         /// Uses midtone transfer function (MTF) similar to NINA's auto-stretch.
@@ -427,8 +455,8 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                 int w = imageData.Properties.Width;
                 int h = imageData.Properties.Height;
 
-                // Downsample to thumbnail (max 400px wide for crisp preview)
-                int scale = Math.Max(1, w / 400);
+                // Downsample to thumbnail (max 800px wide for crisp preview at doubled panel size)
+                int scale = Math.Max(1, w / 800);
                 int tw = w / scale;
                 int th = h / scale;
 
@@ -960,7 +988,7 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                 accessor.SetValueString(SETTINGS_PREFIX + "TargetRA", TargetRA);
                 accessor.SetValueString(SETTINGS_PREFIX + "TargetDec", TargetDec);
                 accessor.SetValueInt32(SETTINGS_PREFIX + "DefocusSteps", DefocusSteps);
-                accessor.SetValueDouble(SETTINGS_PREFIX + "StepsPerMicron", StepsPerMicron);
+                accessor.SetValueDouble(SETTINGS_PREFIX + "MicronsPerStep", MicronsPerStep);
                 accessor.SetValueInt32(SETTINGS_PREFIX + "DefocusDirection", DefocusDirection);
                 accessor.SetValueDouble(SETTINGS_PREFIX + "ExposureTime", ExposureTime);
                 accessor.SetValueString(SETTINGS_PREFIX + "FilterName", FilterName);
@@ -989,7 +1017,7 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                 targetRA = accessor.GetValueString(SETTINGS_PREFIX + "TargetRA", targetRA);
                 targetDec = accessor.GetValueString(SETTINGS_PREFIX + "TargetDec", targetDec);
                 defocusSteps = accessor.GetValueInt32(SETTINGS_PREFIX + "DefocusSteps", defocusSteps);
-                stepsPerMicron = accessor.GetValueDouble(SETTINGS_PREFIX + "StepsPerMicron", stepsPerMicron);
+                micronsPerStep = accessor.GetValueDouble(SETTINGS_PREFIX + "MicronsPerStep", micronsPerStep);
                 defocusDirection = accessor.GetValueInt32(SETTINGS_PREFIX + "DefocusDirection", defocusDirection);
                 exposureTime = accessor.GetValueDouble(SETTINGS_PREFIX + "ExposureTime", exposureTime);
                 filterName = accessor.GetValueString(SETTINGS_PREFIX + "FilterName", filterName);
