@@ -1,4 +1,4 @@
-using NINA.Equipment.Model;
+using NINA.Core.Model.Equipment;
 using NINA.Profile.Interfaces;
 using System;
 
