@@ -39,7 +39,7 @@
   "Installer": {
     "URL": "https://github.com/joergs-git/Skywave-Collimation-helper-for-NINA/releases/download/v2.0.2/NINA.CollimationHelper.SkyWave.2.0.2.9.zip",
     "Type": "ARCHIVE",
-    "Checksum": "df25b01f31500cc68e5b4e94a4721dab33ffe9b1fe4bd115f1af9cac6856028e",
+    "Checksum": "A4717324383444015CE3F3C74118E27CC243D6D3888701CBD9C19B37F0E21E68",
     "ChecksumType": "SHA256"
   }
 }
