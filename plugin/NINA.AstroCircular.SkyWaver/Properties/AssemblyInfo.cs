@@ -15,8 +15,8 @@ using System.Runtime.InteropServices;
 [assembly: Guid("b7e3f1a2-9c4d-4e8b-a6f5-1d2c3b4a5e6f")]
 
 // Version: MAJOR.MINOR.PATCH.CHANNEL (9=release, 2=beta, 1=nightly)
-[assembly: AssemblyVersion("2.0.1.9")]
-[assembly: AssemblyFileVersion("2.0.1.9")]
+[assembly: AssemblyVersion("2.0.2.9")]
+[assembly: AssemblyFileVersion("2.0.2.9")]
 
 // NINA plugin metadata
 [assembly: AssemblyMetadata("MinimumApplicationVersion", "3.0.0.9001")]

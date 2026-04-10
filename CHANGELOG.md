@@ -4,6 +4,11 @@ All notable changes to Collimation Helper for SkyWave will be documented in this
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.0.2] - 2026-04-10
+
+### Fixed
+- **Filter wheel always selecting Slot 0** — filter slot index was hardcoded to 0 in capture sequences, autofocus, and filter switch commands, causing the plugin to always use the L filter regardless of user selection. Now correctly looks up the filter's actual slot position from the NINA profile.
+
 ## [2.0.1] - 2026-04-08
 
 ### Added

@@ -195,7 +195,7 @@ namespace NINA.AstroCircular.SkyWaver.SequenceContainers {
             try {
                 // ── Step 1: Switch filter ──
                 progress?.Report(new ApplicationStatus { Status = $"SKW: Switching to filter {FilterName}" });
-                await filterWheelMediator.ChangeFilter(new FilterInfo(FilterName, 0, (short)0), ct);
+                await filterWheelMediator.ChangeFilter(FilterUtils.LookupFilterInfo(FilterName, profileService), ct);
 
                 // ── Step 2: Plate-solve and center on target star (IN FOCUS) ──
                 progress?.Report(new ApplicationStatus {

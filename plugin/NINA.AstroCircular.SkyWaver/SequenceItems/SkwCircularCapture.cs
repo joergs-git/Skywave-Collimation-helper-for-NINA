@@ -245,7 +245,7 @@ namespace NINA.AstroCircular.SkyWaver.SequenceItems {
             var captureSequence = new CaptureSequence(
                 ExposureTime,
                 CaptureSequence.ImageTypes.LIGHT,
-                new FilterInfo(FilterName, 0, (short)0),
+                FilterUtils.LookupFilterInfo(FilterName, profileService),
                 new BinningMode((short)Binning, (short)Binning),
                 1) {
                 Gain = Gain,

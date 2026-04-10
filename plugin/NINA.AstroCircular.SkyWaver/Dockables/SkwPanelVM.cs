@@ -593,19 +593,7 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                 // "Default" means keep the currently active filter — no switch needed
                 if (string.Equals(name, "Default", StringComparison.OrdinalIgnoreCase)) return;
 
-                var profileFilters = profileService?.ActiveProfile?.FilterWheelSettings?.FilterWheelFilters;
-                FilterInfo target = null;
-                if (profileFilters != null) {
-                    foreach (var f in profileFilters) {
-                        if (f.Name.Equals(name, StringComparison.OrdinalIgnoreCase)) {
-                            target = f;
-                            break;
-                        }
-                    }
-                }
-                if (target == null) {
-                    target = new FilterInfo(name, 0, (short)-1);
-                }
+                var target = FilterUtils.LookupFilterInfo(name, profileService);
                 await filterWheelMediator.ChangeFilter(target, ct);
             } catch (Exception ex) {
                 Logger.Warning($"SKW: Filter switch to '{name}' failed ({ex.Message})");
@@ -709,7 +697,7 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                     StatusText = "Running autofocus...";
                     Progress = 17;
                     var af = autoFocusVMFactory.Create();
-                    var afFilter = new FilterInfo(ResolveFilterName(FilterName), 0, (short)0);
+                    var afFilter = FilterUtils.LookupFilterInfo(ResolveFilterName(FilterName), profileService);
                     await af.StartAutoFocus(afFilter, ct, progressReporter);
                     Logger.Info("SKW: Autofocus completed before defocus");
                     StatusText = "Autofocus complete";
@@ -775,7 +763,7 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                         var captureSeq = new CaptureSequence(
                             ExposureTime,
                             CaptureSequence.ImageTypes.LIGHT,
-                            new FilterInfo(ResolveFilterName(FilterName), 0, (short)0),
+                            FilterUtils.LookupFilterInfo(ResolveFilterName(FilterName), profileService),
                             new BinningMode((short)Binning, (short)Binning),
                             1) {
                             Gain = Gain,

@@ -30,6 +30,12 @@
 - **Rule:** The physically measured quantity is µm/step (move N steps, measure distance, divide). Formula: steps × µm/step = total µm. Always verify units against how users actually measure.
 - **Applies to:** SkwPanelVM defocus conversion, DockableTemplates tooltips
 
+## [2026-04-10] — Never hardcode filter wheel slot indices
+- **Mistake:** Created `new FilterInfo(name, 0, (short)0)` with hardcoded slot 0 in 4 locations
+- **Root cause:** FilterInfo constructor requires a slot index, and 0 was used as a placeholder without realizing it physically selects slot 0 on the filter wheel
+- **Rule:** Always look up FilterInfo from the NINA profile (`FilterWheelSettings.FilterWheelFilters`) to get the correct slot index. Use `FilterUtils.LookupFilterInfo()` instead of constructing FilterInfo directly.
+- **Applies to:** Any code that creates FilterInfo for CaptureSequence, ChangeFilter, or StartAutoFocus
+
 ## [2026-03-22] — Duplicate HTML files are intentional
 - **Mistake:** Flagged astrocircular-skw-nina-helper.html as redundant
 - **Root cause:** User wants both files to exist for different access patterns
