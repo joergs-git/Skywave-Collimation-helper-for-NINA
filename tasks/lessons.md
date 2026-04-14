@@ -1,5 +1,17 @@
 # Lessons Learned
 
+## [2026-03-27] — Use NINA's official CreateManifest.ps1 for manifests
+- **Mistake:** Manually crafted manifest.json and ZIP archive with custom CI packaging, leading to wrong ZIP structure (DLL nested in subfolder) and broken installs
+- **Root cause:** Did not use the official tooling from nina.plugin.manifests repo. Replaced release asset without version bump, breaking checksum validation for existing users.
+- **Rule:** Always use `CreateManifest.ps1` from isbeorn/nina.plugin.manifests/tools/ to generate both the ZIP archive and manifest.json. All metadata belongs in AssemblyInfo.cs assembly attributes. Never replace a release asset without bumping the version — users who already downloaded won't see an update.
+- **Applies to:** NINA plugin packaging, CI workflow, manifest PRs
+
+## [2026-03-27] — Never replace a GitHub release asset for a published version
+- **Mistake:** Replaced v1.0.0 ZIP on the stable release to fix the nested folder issue, without bumping the version number
+- **Root cause:** Thought replacing the asset + updating the checksum via a new manifest PR would fix it. But (a) the manifest PR hadn't merged yet so checksum mismatched immediately, (b) users who already tried v1.0.0 would never see an update since the version didn't change, (c) NINA caches manifests so the old checksum was still active
+- **Rule:** NEVER replace a release asset for a version that's already in the NINA plugin repo. Always bump the version (even PATCH) and create a new release. Then submit a new manifest with the new version. Three cascading mistakes: wrong ZIP structure → replaced asset → checksum mismatch → had to do v1.0.1 anyway.
+- **Applies to:** Any published NINA plugin release, GitHub release management
+
 ## [2026-03-27] — Always verify git identity in temporary clones
 - **Mistake:** Committed in /tmp/nina.plugin.manifests with system identity (real name + hostname)
 - **Root cause:** Fresh clone had no repo-level git config and no global config was set
