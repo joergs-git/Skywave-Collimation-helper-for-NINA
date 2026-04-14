@@ -23,11 +23,15 @@
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0" Text="Star:" VerticalAlignment="Center" Margin="0,0,4,0" FontWeight="Bold" />
                 <ComboBox Grid.Column="1" ItemsSource="{Binding StarPresets}" SelectedItem="{Binding SelectedPreset}"
                           DisplayMemberPath="DisplayLabel" Margin="0,0,4,0" />
-                <Button Grid.Column="2" Content="Find Best" Command="{Binding FindBestStarCommand}" Padding="8,2" />
+                <Button Grid.Column="2" Content="Find Best" Command="{Binding FindBestStarCommand}" Padding="8,2"
+                        ToolTip="Pick the best catalog star for your location and time — now filters for min 30° altitude and prefers stars near zenith" />
+                <Button Grid.Column="3" Content="Use Mount" Command="{Binding UseMountPositionCommand}" Padding="8,2" Margin="4,0,0,0"
+                        ToolTip="Use the mount's current RA/Dec — slew manually via Stellarium, framing wizard or hand controller, then click this to collimate at that point (ideal for southern observers or when the catalog has no good option)" />
             </Grid>
 
             <!-- RA / Dec -->

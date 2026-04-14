@@ -32,6 +32,15 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
 
     [Export(typeof(NINA.Equipment.Interfaces.ViewModel.IDockableVM))]
     public class SkwPanelVM : DockableVM {
+
+        // UI token meaning "use whatever filter is currently active on the wheel".
+        // Resolved to a concrete filter name via ResolveFilterName() before any wheel motion.
+        private const string DefaultFilterToken = "Default";
+
+        // Filter used for plate-solving the centering step — Luminance gives the best SNR
+        // for solving across most cameras. Fallback if ResolveFilterName has nothing to return.
+        private const string PlateSolveFilterName = "L";
+
         private readonly ITelescopeMediator telescopeMediator;
         private readonly ICameraMediator cameraMediator;
         private readonly IFocuserMediator focuserMediator;
@@ -87,6 +96,7 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
             CancelCommand = new RelayCommand((o) => Cancel());
             BrowseFolderCommand = new RelayCommand((o) => BrowseFolder());
             FindBestStarCommand = new RelayCommand((o) => FindBestStar());
+            UseMountPositionCommand = new RelayCommand((o) => UseMountPosition());
             ZoomInCommand = new RelayCommand((o) => ZoomIn());
             ZoomOutCommand = new RelayCommand((o) => ZoomOut());
             ZoomResetCommand = new RelayCommand((o) => ZoomReset());
@@ -116,6 +126,7 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
         public ICommand CancelCommand { get; }
         public ICommand BrowseFolderCommand { get; }
         public ICommand FindBestStarCommand { get; }
+        public ICommand UseMountPositionCommand { get; }
 
         // ── State ──
 
@@ -201,14 +212,14 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
             set { exposureTime = value; RaisePropertyChanged(); SaveSettings(); }
         }
 
-        private string filterName = "Default";
+        private string filterName = DefaultFilterToken;
         public string FilterName {
             get => filterName;
             set { filterName = value; RaisePropertyChanged(); SaveSettings(); }
         }
 
         /// <summary>Filter names from the connected filter wheel, plus "Default" (= active filter).</summary>
-        private ObservableCollection<string> availableFilters = new ObservableCollection<string> { "Default" };
+        private ObservableCollection<string> availableFilters = new ObservableCollection<string> { DefaultFilterToken };
         public ObservableCollection<string> AvailableFilters {
             get => availableFilters;
             set { availableFilters = value; RaisePropertyChanged(); }
@@ -216,7 +227,7 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
 
         /// <summary>Refreshes the filter dropdown from the NINA profile filter wheel settings.</summary>
         private void RefreshAvailableFilters() {
-            var filters = new ObservableCollection<string> { "Default" };
+            var filters = new ObservableCollection<string> { DefaultFilterToken };
             var profileFilters = profileService?.ActiveProfile?.FilterWheelSettings?.FilterWheelFilters;
             if (profileFilters != null) {
                 foreach (var f in profileFilters) {
@@ -224,9 +235,8 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                 }
             }
             AvailableFilters = filters;
-            // Ensure current selection is still valid
             if (!filters.Contains(filterName)) {
-                FilterName = "Default";
+                FilterName = DefaultFilterToken;
             }
         }
 
@@ -541,6 +551,50 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
             }
         }
 
+        // ── Use Current Mount Position ──
+
+        /// <summary>
+        /// Reads the mount's current pointing and loads it into TargetRA / TargetDec,
+        /// bypassing the preset catalog. Lets the user slew manually (hand controller,
+        /// Stellarium, NINA framing wizard) to any point on the sky — including zenith —
+        /// then run the ring pattern from there. Essential for southern observers whose
+        /// local sky is not well covered by the preset catalog.
+        /// </summary>
+        private void UseMountPosition() {
+            try {
+                var info = telescopeMediator.GetInfo();
+                if (info == null || !info.Connected) {
+                    StatusText = "Mount not connected — cannot read current position";
+                    return;
+                }
+
+                // NINA's TelescopeInfo exposes RightAscension in decimal hours and
+                // Declination in decimal degrees. Native epoch depends on the mount;
+                // we treat it as J2000 downstream. Center will plate-solve the actual
+                // sky at these coordinates, so any epoch offset resolves on its own.
+                double raHours = info.RightAscension;
+                double decDeg = info.Declination;
+
+                // Batch update: set backing fields directly, raise PropertyChanged once
+                // per field, then SaveSettings + RebuildMap once. Going through the public
+                // setters would fire 3 SaveSettings (60 profile writes) and 2 RebuildMaps.
+                SelectedPreset = null;
+                starName = "Mount position";
+                targetRA = CoordinateUtils.ToHMS(raHours);
+                targetDec = CoordinateUtils.ToDMS(decDeg);
+                RaisePropertyChanged(nameof(StarName));
+                RaisePropertyChanged(nameof(TargetRA));
+                RaisePropertyChanged(nameof(TargetDec));
+                SaveSettings();
+                RebuildMap();
+
+                StatusText = $"Using mount position: RA {TargetRA}, Dec {TargetDec}";
+            } catch (Exception ex) {
+                StatusText = $"Mount position read failed: {ex.Message}";
+                Logger.Warning($"SKW: UseMountPosition failed: {ex}");
+            }
+        }
+
         // ── Find Best Star ──
 
         private void FindBestStar() {
@@ -579,20 +633,23 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
 
         /// <summary>Returns the actual filter name, resolving "Default" to the currently active filter.</summary>
         private string ResolveFilterName(string name) {
-            if (string.Equals(name, "Default", StringComparison.OrdinalIgnoreCase)) {
+            if (string.Equals(name, DefaultFilterToken, StringComparison.OrdinalIgnoreCase)) {
                 var info = filterWheelMediator.GetInfo();
                 if (info?.Connected == true && !string.IsNullOrWhiteSpace(info.SelectedFilter?.Name))
                     return info.SelectedFilter.Name;
-                return "L"; // fallback if no filter wheel info available
+                return PlateSolveFilterName;
             }
             return name;
         }
 
+        /// <summary>
+        /// Switches to the named filter. Callers must pass a concrete filter name —
+        /// resolve "Default" to the actual name via ResolveFilterName() before calling,
+        /// otherwise the lookup falls back to slot -1 and the wheel may not move.
+        /// </summary>
         private async Task SwitchFilter(string name, CancellationToken ct) {
             try {
-                // "Default" means keep the currently active filter — no switch needed
-                if (string.Equals(name, "Default", StringComparison.OrdinalIgnoreCase)) return;
-
+                if (string.IsNullOrWhiteSpace(name)) return;
                 var target = FilterUtils.LookupFilterInfo(name, profileService);
                 await filterWheelMediator.ChangeFilter(target, ct);
             } catch (Exception ex) {
@@ -654,14 +711,18 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                     ? cameraMediator.GetInfo().YSize * profileService.ActiveProfile.CameraSettings.PixelSize / 1000.0
                     : 24.0;
 
-                // Step 1: Switch to L filter for plate-solve centering (best SNR for solving)
-                StatusText = "Switching to L filter for plate-solve...";
-                Progress = 3;
-                // Remember current filter so we can restore it on cancel
+                // Step 1: Capture filter state, then switch to L for plate-solve.
+                // Pre-resolving the capture filter BEFORE we touch the wheel is critical:
+                // if we resolve "Default" later, after we've already changed filters,
+                // "Default" would wrongly mean "whatever filter plate-solving happened to leave us on".
                 var fwInfo = filterWheelMediator.GetInfo();
                 if (fwInfo?.Connected == true && fwInfo.SelectedFilter != null)
                     originalFilter = fwInfo.SelectedFilter.Name;
-                await SwitchFilter("L", ct);
+                string captureFilter = ResolveFilterName(FilterName);
+
+                StatusText = $"Switching to {PlateSolveFilterName} filter for plate-solve...";
+                Progress = 3;
+                await SwitchFilter(PlateSolveFilterName, ct);
 
                 // Step 2: Slew & Center on target star (plate-solve, in focus, L filter)
                 StatusText = $"Centering on {StarName} (slew + plate-solve)...";
@@ -687,17 +748,20 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                     await telescopeMediator.SlewToCoordinatesAsync(coords, ct);
                 }
 
-                // Step 3: Switch to target filter for capture (before defocus)
-                StatusText = $"Switching to {FilterName} filter for capture...";
+                // Step 3: Switch to target filter for capture (before defocus).
+                // Always uses the pre-resolved captureFilter — never "Default" — so plate-solving
+                // cannot leave us on the wrong filter regardless of what NINA's Center instruction
+                // did internally (it may have switched to the profile's plate-solve filter).
+                StatusText = $"Switching to {captureFilter} filter for capture...";
                 Progress = 15;
-                await SwitchFilter(FilterName, ct);
+                await SwitchFilter(captureFilter, ct);
 
                 // Step 3b: Autofocus before defocusing (if enabled)
                 if (RunAutofocus) {
                     StatusText = "Running autofocus...";
                     Progress = 17;
                     var af = autoFocusVMFactory.Create();
-                    var afFilter = FilterUtils.LookupFilterInfo(ResolveFilterName(FilterName), profileService);
+                    var afFilter = FilterUtils.LookupFilterInfo(captureFilter, profileService);
                     await af.StartAutoFocus(afFilter, ct, progressReporter);
                     Logger.Info("SKW: Autofocus completed before defocus");
                     StatusText = "Autofocus complete";
@@ -763,7 +827,7 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                         var captureSeq = new CaptureSequence(
                             ExposureTime,
                             CaptureSequence.ImageTypes.LIGHT,
-                            FilterUtils.LookupFilterInfo(ResolveFilterName(FilterName), profileService),
+                            FilterUtils.LookupFilterInfo(captureFilter, profileService),
                             new BinningMode((short)Binning, (short)Binning),
                             1) {
                             Gain = Gain,
@@ -889,7 +953,7 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
 
                 double pixelSize = profileService?.ActiveProfile?.CameraSettings?.PixelSize ?? 3.76;
                 var headers = FitsHeaderWriter.BuildHeaders(
-                    fl, pixelSize, Binning, ExposureTime, -999, ResolveFilterName(FilterName));
+                    fl, pixelSize, Binning, ExposureTime, -999, captureFilter);
 
                 // Save integrated FITS directly in the output folder
                 Directory.CreateDirectory(outputDir);
