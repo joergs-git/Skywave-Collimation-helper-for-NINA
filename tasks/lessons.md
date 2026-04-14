@@ -1,5 +1,35 @@
 # Lessons Learned
 
+## [2026-04-14] — "Default" filter token must be resolved BEFORE any wheel motion
+- **Mistake:** `SwitchFilter("Default")` silently returned without moving the wheel, so after NINA's Center instruction switched filters internally (for plate-solving), the plugin never restored the user's chosen capture filter. Users saw captures taken on L (or worse, on NINA's profile-configured plate-solve filter).
+- **Root cause:** The "Default" sentinel was interpreted as "keep whatever filter is currently active" — but that interpretation only holds if we haven't touched the wheel yet. Once the plugin itself switches to L for plate-solving, "Default" no longer means "the user's filter" — it means "L".
+- **Rule:** Any filter token that means "the currently active filter" MUST be resolved to a concrete name at the very start of a run, before any code path touches the wheel. Cache the resolved name in a local and thread it through every downstream call site. Never rely on ambient "current filter" state after you've changed filters yourself.
+- **Applies to:** SkwPanelVM.RunCollimation filter handling, any future feature that calls NINA Center/plate-solve with a user-selected capture filter
+
+## [2026-04-14] — Altitude filter is a horizon floor, not a tie-breaker
+- **Mistake:** StarCatalog.FindBestStar used `if (alt > bestAlt)` with no minimum altitude check, so for southern-hemisphere observers at LSTs where no southern star was in the ±3h HA window, the "best" returned star could be below the horizon.
+- **Root cause:** "Pick the highest alt star that passes the HA filter" implicitly assumes the HA filter guarantees visibility. It doesn't — a star at the top of the HA window can still be below the horizon from a hostile latitude.
+- **Rule:** Altitude must be an explicit hard floor (30°, with fallback to 20° then 10°), not a ranking tie-breaker. If nothing passes 10° return null and let the caller surface "no star visible now" — never silently pick a below-horizon star.
+- **Applies to:** StarCatalog.FindBestStar, any future "best target" picker
+
+## [2026-04-14] — Property setters that auto-persist need batching paths
+- **Mistake:** SkwPanelVM property setters (StarName, TargetRA, TargetDec) each trigger `SaveSettings()` (20 NINA profile writes) and `RebuildMap()`. A multi-field update like UseMountPosition or SelectedPreset.set fires 3x SaveSettings + 2x RebuildMap when 1 of each would do.
+- **Root cause:** Each setter is designed as a standalone edit from the UI — reasonable default. Nobody noticed the cost when multiple setters fired back-to-back from code paths that set 3+ fields at once.
+- **Rule:** When setting multiple related backing fields in code, set them directly (bypass the public setter), raise PropertyChanged manually for each, then call SaveSettings + RebuildMap once at the end. Alternative: a suppressPersist flag on the VM checked by each setter's persist/rebuild calls.
+- **Applies to:** SkwPanelVM.UseMountPosition; consider extending same pattern to SelectedPreset.set which has the same cost on every ComboBox click
+
+## [2026-03-27] — Use NINA's official CreateManifest.ps1 for manifests
+- **Mistake:** Manually crafted manifest.json and ZIP archive with custom CI packaging, leading to wrong ZIP structure (DLL nested in subfolder) and broken installs
+- **Root cause:** Did not use the official tooling from nina.plugin.manifests repo. Replaced release asset without version bump, breaking checksum validation for existing users.
+- **Rule:** Always use `CreateManifest.ps1` from isbeorn/nina.plugin.manifests/tools/ to generate both the ZIP archive and manifest.json. All metadata belongs in AssemblyInfo.cs assembly attributes. Never replace a release asset without bumping the version — users who already downloaded won't see an update.
+- **Applies to:** NINA plugin packaging, CI workflow, manifest PRs
+
+## [2026-03-27] — Never replace a GitHub release asset for a published version
+- **Mistake:** Replaced v1.0.0 ZIP on the stable release to fix the nested folder issue, without bumping the version number
+- **Root cause:** Thought replacing the asset + updating the checksum via a new manifest PR would fix it. But (a) the manifest PR hadn't merged yet so checksum mismatched immediately, (b) users who already tried v1.0.0 would never see an update since the version didn't change, (c) NINA caches manifests so the old checksum was still active
+- **Rule:** NEVER replace a release asset for a version that's already in the NINA plugin repo. Always bump the version (even PATCH) and create a new release. Then submit a new manifest with the new version. Three cascading mistakes: wrong ZIP structure → replaced asset → checksum mismatch → had to do v1.0.1 anyway.
+- **Applies to:** Any published NINA plugin release, GitHub release management
+
 ## [2026-03-27] — Always verify git identity in temporary clones
 - **Mistake:** Committed in /tmp/nina.plugin.manifests with system identity (real name + hostname)
 - **Root cause:** Fresh clone had no repo-level git config and no global config was set

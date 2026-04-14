@@ -9,7 +9,10 @@ namespace NINA.AstroCircular.SkyWaver.Models {
     /// Embedded catalog of bright, isolated stars suitable for SKW collimation.
     /// Combines the original plugin presets with the SkyWave "Collimation Stars" list
     /// covering all seasons and a wide range of declinations.
-    /// v2.0.0: 80 northern + equatorial stars. v2.0.1: added 25 southern hemisphere stars (Dec -25° to -79°).
+    /// v2.0.0: 80 northern + equatorial stars.
+    /// v2.0.1: added 25 southern hemisphere stars (Dec -25° to -79°).
+    /// v2.1.0: added 14 southern winter stars in the RA 7h/10h/16h–21h gap (Sco/Ara/Sgr/Tel/Ind/Pav)
+    ///         so NZ / Australia observers always have a near-zenith option during austral winter.
     /// </summary>
     public static class StarCatalog {
 
@@ -159,22 +162,59 @@ namespace NINA.AstroCircular.SkyWaver.Models {
             new StarPreset { Name = "Wazn",       RA = "5:50:57.6",  Dec = "-35:46:05.9", Magnitude = 3.12, Season = "wi", Constellation = "Col", Note = "β Col — HR 2040, pair with Phact" },
             new StarPreset { Name = "α Pyx",      RA = "8:43:35.5",  Dec = "-33:11:11.0", Magnitude = 3.68, Season = "sp", Constellation = "Pyx", Note = "Alpha Pyx — HR 3468, isolated Pyxis" },
             new StarPreset { Name = "ι Cen",      RA = "13:20:35.8", Dec = "-36:42:44.3", Magnitude = 2.73, Season = "su", Constellation = "Cen", Note = "Iota Cen — HR 5028, away from crowded Centaurus core" },
+
+            // ════════════════════════════════════════════════════════════════
+            //  v2.1.0 ADDITIONS — Close the austral winter gap (RA 16h–21h)
+            //  Essential for NZ / Australia users during April–September evenings
+            //  when the previous catalog had no southern star within ±3h of meridian.
+            // ════════════════════════════════════════════════════════════════
+
+            // -- RA 7h–8h: fills thin Puppis/CMa gap --
+            new StarPreset { Name = "Aludra",     RA = "7:24:05.7",  Dec = "-29:18:11.2", Magnitude = 2.45, Season = "wi", Constellation = "CMa", Note = "η CMa — HR 2827, tail of Canis Major, bright but isolated" },
+            new StarPreset { Name = "σ Pup",      RA = "7:29:13.8",  Dec = "-43:18:05.2", Magnitude = 3.25, Season = "wi", Constellation = "Pup", Note = "Sigma Pup — HR 2878, clean Puppis field" },
+
+            // -- RA 10h–13h: reinforces spring coverage for southern observers --
+            new StarPreset { Name = "α Ant",      RA = "10:27:09.1", Dec = "-31:04:04.0", Magnitude = 4.25, Season = "sp", Constellation = "Ant", Note = "Alpha Ant — HR 4104, brightest in sparse Antlia" },
+            new StarPreset { Name = "Algorab",    RA = "12:29:51.8", Dec = "-16:30:55.6", Magnitude = 2.94, Season = "su", Constellation = "Crv", Note = "δ Crv — HR 4757, clean field south of Virgo" },
+
+            // -- RA 16h–17h: fills the critical Scorpius/Ara gap --
+            new StarPreset { Name = "δ TrA",      RA = "16:15:26.3", Dec = "-63:41:07.6", Magnitude = 3.85, Season = "su", Constellation = "TrA", Note = "Delta TrA — HR 6030, isolated Triangulum Australe" },
+            new StarPreset { Name = "ζ² Sco",     RA = "16:54:35.0", Dec = "-42:21:40.7", Magnitude = 3.62, Season = "su", Constellation = "Sco", Note = "Zet2 Sco — HR 6271, south of Scorpius body" },
+            new StarPreset { Name = "η Sco",      RA = "17:12:09.2", Dec = "-43:14:21.5", Magnitude = 3.33, Season = "su", Constellation = "Sco", Note = "Eta Sco — HR 6380, south of the Scorpius tail" },
+
+            // -- RA 17h–18h: Ara + Telescopium (deep southern winter) --
+            new StarPreset { Name = "β Ara",      RA = "17:25:17.9", Dec = "-55:31:47.4", Magnitude = 2.85, Season = "su", Constellation = "Ara", Note = "Beta Ara — HR 6461, bright, south of Scorpius" },
+            new StarPreset { Name = "α Tel",      RA = "18:26:58.4", Dec = "-45:58:06.3", Magnitude = 3.51, Season = "fa", Constellation = "Tel", Note = "Alpha Tel — HR 6897, very sparse Telescopium field" },
+
+            // -- RA 18h–19h: Sagittarius (Kaus) --
+            new StarPreset { Name = "Kaus Meridionalis", RA = "18:20:59.6", Dec = "-29:49:41.2", Magnitude = 2.72, Season = "fa", Constellation = "Sgr", Note = "δ Sgr — HR 6859, upper Sgr teapot, bright but isolated" },
+            new StarPreset { Name = "Albaldah",   RA = "19:09:45.8", Dec = "-21:01:25.0", Magnitude = 2.88, Season = "fa", Constellation = "Sgr", Note = "π Sgr — HR 7264, north of Sgr core, clean background" },
+
+            // -- RA 20h–21h: Indus + Pavo (south of Capricornus) --
+            new StarPreset { Name = "α Ind",      RA = "20:37:33.9", Dec = "-47:17:28.8", Magnitude = 3.11, Season = "fa", Constellation = "Ind", Note = "Alpha Ind — HR 7869, sparsest region, excellent isolation" },
+            new StarPreset { Name = "β Pav",      RA = "20:44:57.4", Dec = "-66:12:11.6", Magnitude = 3.42, Season = "fa", Constellation = "Pav", Note = "Beta Pav — HR 7913, sparse southern Pavo" },
+            new StarPreset { Name = "γ Pav",      RA = "21:26:26.6", Dec = "-65:21:58.3", Magnitude = 4.22, Season = "fa", Constellation = "Pav", Note = "Gamma Pav — HR 8181, very isolated, nearby sun-like star" },
         };
 
         /// <summary>
         /// Find the best star for a given observing time, location, and optical setup.
-        /// Filters by magnitude range (to avoid overexposure, targeting ~60% ADU in ~8s)
-        /// then selects the highest-altitude star within ±3h of the meridian.
+        /// Filters by magnitude range (to avoid overexposure), by ±3h hour angle, and
+        /// by a minimum altitude floor. Scores remaining candidates by blending current
+        /// altitude with transit altitude so the selection prefers stars that pass close
+        /// to the local zenith — guaranteeing they will stay high for the duration of
+        /// the collimation run and are not on their way below the horizon.
+        /// If nothing passes the 30° altitude floor, retries at 20° then 10° before
+        /// giving up — prevents silently picking a below-horizon star.
         /// </summary>
         /// <param name="observingTimeUtc">Target observing time in UTC</param>
-        /// <param name="latitudeDeg">Observer latitude in degrees north</param>
+        /// <param name="latitudeDeg">Observer latitude in degrees north (negative = south)</param>
         /// <param name="longitudeDeg">Observer longitude in degrees east</param>
         /// <param name="focalLengthMm">Telescope focal length in mm (0 to skip mag filter)</param>
         /// <param name="apertureMm">Telescope aperture in mm (0 to skip mag filter)</param>
         /// <param name="exposureSeconds">Exposure time in seconds</param>
         /// <param name="gain">Camera gain setting</param>
         /// <param name="customStars">Optional additional user-defined stars</param>
-        /// <returns>Best star, its altitude, and ideal mag range — or null if none found</returns>
+        /// <returns>Best star, its altitude, and ideal mag range — or null if nothing above 10°</returns>
         public static (StarPreset Star, double AltitudeDeg, double MagLow, double MagHigh)? FindBestStar(
             DateTime observingTimeUtc,
             double latitudeDeg,
@@ -196,13 +236,45 @@ namespace NINA.AstroCircular.SkyWaver.Models {
                 magHigh = high;
             }
 
-            var allStars = new List<StarPreset>(Presets);
-            if (customStars != null) allStars.AddRange(customStars);
+            IReadOnlyList<StarPreset> allStars;
+            if (customStars != null && customStars.Count > 0) {
+                var merged = new List<StarPreset>(Presets.Count + customStars.Count);
+                merged.AddRange(Presets);
+                merged.AddRange(customStars);
+                allStars = merged;
+            } else {
+                allStars = Presets;
+            }
+
+            // Progressive altitude floors: 30° ideal (good seeing, clear of most obstacles),
+            // 20° usable, 10° last resort. Return null below 10° so the caller shows a clear
+            // "no suitable star visible now" message instead of silently picking a horizon star.
+            double[] minAltitudes = { 30.0, 20.0, 10.0 };
+            foreach (var minAlt in minAltitudes) {
+                var pick = PickBestAbove(allStars, lst, latitudeDeg, magLow, magHigh, minAlt);
+                if (pick != null) {
+                    return (pick.Value.Star, pick.Value.Alt, magLow, magHigh);
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Core scorer: returns the highest-scoring star that passes the ±3h hour-angle
+        /// gate, the magnitude window, and the minimum altitude floor.
+        /// Score = (current altitude) + (transit altitude) - 90, equivalent to
+        /// alt - |lat - dec|. This rewards stars that pass close to local zenith,
+        /// so the selection does not drift toward the horizon during longer runs.
+        /// </summary>
+        private static (StarPreset Star, double Alt)? PickBestAbove(
+            IReadOnlyList<StarPreset> stars, double lst, double latitudeDeg,
+            double magLow, double magHigh, double minAltitudeDeg) {
 
             StarPreset best = null;
-            double bestAlt = -99;
+            double bestScore = double.NegativeInfinity;
+            double bestAlt = 0;
 
-            foreach (var star in allStars) {
+            foreach (var star in stars) {
                 // Filter by magnitude range (avoid overexposure, target ~60% ADU)
                 if (star.Magnitude < magLow || star.Magnitude > magHigh) continue;
 
@@ -216,14 +288,24 @@ namespace NINA.AstroCircular.SkyWaver.Models {
                 if (Math.Abs(ha) > 3) continue;
 
                 double alt = CoordinateUtils.GetAltitude(latitudeDeg, raH, decD, lst);
-                if (alt > bestAlt) {
-                    bestAlt = alt;
+                if (alt < minAltitudeDeg) continue;
+
+                // Score rewards stars on better visibility arcs, not just current altitude.
+                // transitAlt (max altitude this star ever reaches from this observer) is
+                // 90 - |lat - dec|; a star at 60° now heading for a 85° transit beats a
+                // star at 70° now that will set in an hour. Equivalent to alt - |lat - dec|.
+                double transitAlt = 90.0 - Math.Abs(latitudeDeg - decD);
+                double score = alt + transitAlt - 90.0;
+
+                if (score > bestScore) {
+                    bestScore = score;
                     best = star;
+                    bestAlt = alt;
                 }
             }
 
             if (best == null) return null;
-            return (best, bestAlt, magLow, magHigh);
+            return (best, bestAlt);
         }
     }
 }

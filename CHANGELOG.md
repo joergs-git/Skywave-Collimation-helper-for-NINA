@@ -4,6 +4,21 @@ All notable changes to Collimation Helper for SkyWave will be documented in this
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.0] - 2026-04-14
+
+Focused on southern-hemisphere observers. Addresses a user report from Australia/NZ where "Find Best" was picking stars below the horizon, the capture filter was sometimes left on the plate-solve filter, and there was no way to run the ring pattern from an arbitrary point in the sky.
+
+### Added
+- **"Use Mount" button** — reads the mount's current RA/Dec and loads it as the target, so you can slew manually via Stellarium / framing wizard / hand controller and collimate from any point in the sky, bypassing the catalog. Essential when the preset catalog has no good option for your latitude and time.
+- **14 new southern winter/spring stars** closing the previous RA 16h–21h meridian-crossing gap: η CMa (Aludra), σ Pup, α Ant, δ Crv (Algorab), δ TrA, ζ² Sco, η Sco, β Ara, α Tel, δ Sgr (Kaus Meridionalis), π Sgr (Albaldah), α Ind, β Pav, γ Pav. Catalog total is now 120 stars.
+
+### Fixed
+- **"Find Best" could pick stars below the horizon** — the altitude check now enforces a 30° minimum (with fallback to 20° then 10°) and returns a clear "no star visible now" message if nothing passes, instead of silently returning the "least bad" candidate.
+- **Capture filter sometimes left on the plate-solve filter** — `SwitchFilter("Default")` was a silent no-op, so after NINA's Center instruction switched filters internally for plate-solving, the plugin never switched back. The target filter is now pre-resolved at the start of the run (before any filter change) and always used explicitly for capture, guaranteeing deterministic filter state regardless of what NINA does internally.
+
+### Changed
+- **"Find Best" scoring rewards zenith passage** — stars are now ranked by `currentAltitude + transitAltitude - 90` (equivalent to `altitude - |latitude - declination|`). A star currently at 60° that will pass within 5° of zenith now beats a star currently at 70° that will set in an hour.
+
 ## [2.0.2] - 2026-04-10
 
 ### Fixed
