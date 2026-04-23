@@ -743,8 +743,21 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                     await centerInstruction.Execute(progressReporter, ct);
                     StatusText = $"Centered on {StarName} successfully";
                 } catch (Exception psEx) {
-                    Logger.Warning($"SKW: Plate-solve centering failed ({psEx.Message}), falling back to blind slew");
-                    StatusText = $"Plate-solve failed, slewing blind to {StarName}...";
+                    // Plate-solve is the one step that normally hides mount-side epoch bugs
+                    // (e.g. 10Micron ASCOM drivers that misreport EquatorialSystem): a successful
+                    // plate-solve physically parks the mount on the star regardless of the
+                    // driver's advertised epoch. Once we fall through to a blind slew, any
+                    // J2000 ↔ JNOW mismatch in the driver translates directly into a pattern
+                    // offset of ~8–12 arcmin at high declinations. Make this path LOUD so
+                    // users who thought they were plate-solving don't silently ship an offset run.
+                    Logger.Warning($"SKW: Plate-solve centering failed ({psEx.Message}). Falling back to blind slew. " +
+                                   "If the mount ASCOM driver misreports its equatorial system (J2000 vs JNOW), " +
+                                   "the ring pattern will be offset by the precession amount.");
+                    NINA.Core.Utility.Notification.Notification.ShowWarning(
+                        $"SKW: Plate-solve failed — blind-slewing to {StarName}.\n" +
+                        "The pattern may be offset if the mount's ASCOM driver misreports " +
+                        "its epoch (J2000 vs JNOW). Check the driver's equatorial system setting.");
+                    StatusText = $"WARNING: Plate-solve failed — blind slew to {StarName} (pattern may drift)";
                     await telescopeMediator.SlewToCoordinatesAsync(coords, ct);
                 }
 

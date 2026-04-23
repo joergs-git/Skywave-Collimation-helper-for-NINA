@@ -4,6 +4,13 @@ All notable changes to Collimation Helper for SkyWave will be documented in this
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.1] - 2026-04-23
+
+Triggered by a user report (Jeff Morgan) of a consistent ~8–12 arcmin pattern offset on a 10Micron mount. Investigation showed the SKW helper's J2000 coordinates are correct (matches SIMBAD for λ Dra); the offset is caused by the mount's ASCOM driver misreporting its equatorial system (J2000 vs JNOW), which made NINA apply the wrong precession transformation. The plugin couldn't fix the driver bug, but it could have warned the user — instead it silently fell back to a blind slew when plate-solving failed, which is exactly the path that lets driver epoch bugs surface as pattern offsets.
+
+### Fixed
+- **Silent plate-solve fallback hid mount epoch bugs** — when the initial plate-solve centering step failed (wrong filter, no solver configured, solver timeout on dim/high-Dec stars), the plugin logged a quiet `Logger.Warning` and continued with a blind slew. The fallback status message was immediately overwritten by the next step, so users never realised they were running a blind pattern that inherited any ASCOM driver epoch mismatch (known 10Micron quirk). The fallback now fires a NINA `Notification.ShowWarning` toast explicitly calling out the epoch-offset risk and leaves a persistent `WARNING:` prefix in the status text.
+
 ## [2.1.0] - 2026-04-14
 
 Focused on southern-hemisphere observers. Addresses a user report from Australia/NZ where "Find Best" was picking stars below the horizon, the capture filter was sometimes left on the plate-solve filter, and there was no way to run the ring pattern from an arbitrary point in the sky.
