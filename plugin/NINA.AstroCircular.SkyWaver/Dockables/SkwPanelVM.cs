@@ -750,7 +750,7 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                     // reference point. Sync is best-effort: not all drivers support it, so a failure
                     // here is logged but never aborts the run.
                     try {
-                        bool synced = telescopeMediator.Sync(coords);
+                        bool synced = await telescopeMediator.Sync(coords);
                         if (synced)
                             Logger.Info($"SKW: Mount synced to plate-solved coords for {StarName} (J2000 RA={coords.RA:F4}h Dec={coords.Dec:F4}°)");
                         else
