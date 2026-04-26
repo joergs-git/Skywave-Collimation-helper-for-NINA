@@ -741,6 +741,24 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                         Coordinates = new NINA.Astrometry.InputCoordinates(coords)
                     };
                     await centerInstruction.Execute(progressReporter, ct);
+
+                    // Sync the mount to the plate-solved J2000 coordinates. The Center step has
+                    // physically parked the scope on the star, so syncing here anchors the mount's
+                    // internal position model to the truth. If the ASCOM driver has a fixed epoch
+                    // offset (e.g. NYX-101, 10Micron J2000↔JNOW quirks), subsequent blind ring slews
+                    // — which can't plate-solve while defocused — at least start from a corrected
+                    // reference point. Sync is best-effort: not all drivers support it, so a failure
+                    // here is logged but never aborts the run.
+                    try {
+                        bool synced = telescopeMediator.Sync(coords);
+                        if (synced)
+                            Logger.Info($"SKW: Mount synced to plate-solved coords for {StarName} (J2000 RA={coords.RA:F4}h Dec={coords.Dec:F4}°)");
+                        else
+                            Logger.Warning("SKW: Mount sync returned false — driver may not support sync. Ring slews will rely on driver epoch handling alone.");
+                    } catch (Exception syncEx) {
+                        Logger.Warning($"SKW: Mount sync after Center failed ({syncEx.Message}). Continuing — ring slews may drift if driver misreports epoch.");
+                    }
+
                     StatusText = $"Centered on {StarName} successfully";
                 } catch (Exception psEx) {
                     // Plate-solve is the one step that normally hides mount-side epoch bugs

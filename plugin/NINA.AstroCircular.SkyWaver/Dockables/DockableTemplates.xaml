@@ -105,19 +105,19 @@
                            Text="⚙ Defocus steps must be adjusted for your setup: get the required defocus in microns from SkyWave, then divide by your focuser's µm/step ratio. To find your ratio: move the focuser e.g. 10000 steps, measure the travel distance, divide by 10000." />
             </Border>
 
-            <!-- Toggles -->
+            <!-- Toggles — wide gap between groups so each label visually pairs with its own checkbox -->
             <WrapPanel Margin="0,0,0,4">
-                <StackPanel Orientation="Horizontal" Margin="0,0,12,0">
+                <StackPanel Orientation="Horizontal" Margin="0,0,36,0">
                     <CheckBox IsChecked="{Binding IncludeCenter}" VerticalAlignment="Center" />
                     <TextBlock Text="Center" Margin="4,0,0,0" FontSize="10" VerticalAlignment="Center"
                                ToolTip="Include center star position" />
                 </StackPanel>
-                <StackPanel Orientation="Horizontal" Margin="0,0,12,0">
+                <StackPanel Orientation="Horizontal" Margin="0,0,36,0">
                     <CheckBox IsChecked="{Binding RunAutofocus}" VerticalAlignment="Center" />
                     <TextBlock Text="AF first" Margin="4,0,0,0" FontSize="10" VerticalAlignment="Center"
                                ToolTip="Run autofocus before defocusing" />
                 </StackPanel>
-                <StackPanel Orientation="Horizontal" Margin="0,0,12,0">
+                <StackPanel Orientation="Horizontal" Margin="0,0,36,0">
                     <CheckBox IsChecked="{Binding CropAfterStack}" VerticalAlignment="Center" />
                     <TextBlock Text="Crop" Margin="4,0,0,0" FontSize="10" VerticalAlignment="Center"
                                ToolTip="Crop stacked image to ring pattern + 100px margin" />
@@ -261,9 +261,9 @@
                             <Button Content="+" Command="{Binding ZoomInCommand}" Padding="4,0" FontSize="11"
                                     Width="20" Height="18" Background="#1a1f2e" Foreground="#8899bb"
                                     BorderBrush="#2a3050" ToolTip="Zoom in" />
-                            <Button Content="1:1" Command="{Binding ZoomResetCommand}" Padding="3,0" FontSize="9"
-                                    Height="18" Margin="3,0,0,0" Background="#1a1f2e" Foreground="#8899bb"
-                                    BorderBrush="#2a3050" ToolTip="Reset zoom to fit" />
+                            <Button Content="▭" Command="{Binding ZoomResetCommand}" Padding="0" FontSize="13"
+                                    Width="20" Height="18" Margin="3,0,0,0" Background="#1a1f2e" Foreground="#8899bb"
+                                    BorderBrush="#2a3050" ToolTip="Zoom to fit" />
                         </StackPanel>
                     </Grid>
                 </Border>

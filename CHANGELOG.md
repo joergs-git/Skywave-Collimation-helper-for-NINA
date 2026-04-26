@@ -4,6 +4,17 @@ All notable changes to Collimation Helper for SkyWave will be documented in this
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.2] - 2026-04-26
+
+Triggered by a user report (Rams) on a Pegasus NYX-101 mount: plate-solve at the centre star reported success, but the imaging sequence still started from a totally different point near Regulus. Investigation showed the centring step was fine — the failure was downstream at the defocused ring slews, which by design cannot be plate-solved and depend entirely on the mount driver's epoch handling. Also tightened the toggle-row layout in the panel after feedback that labels visually attached to the wrong checkbox, and replaced the `1:1` zoom-reset button with a clearer fit-to-frame icon.
+
+### Added
+- **Mount sync after successful Center step** — once the Center instruction has plate-solved and physically parked the scope on the target star, the plugin now calls `telescopeMediator.Sync()` with the J2000 target coordinates. This anchors the mount's internal position model to the plate-solved truth so that subsequent blind ring slews (which happen while defocused and cannot plate-solve) start from a corrected reference point. Mitigates fixed-offset epoch quirks in ASCOM drivers like Pegasus NYX-101 and 10Micron. Sync is best-effort: drivers that don't support it log a warning and the run continues unchanged.
+
+### Changed
+- **Wider gap between toggle groups** — the four checkboxes in the panel (Center / AF first / Crop / Del subs) had a 12 px gap between groups but only 4 px between checkbox and its own label, which made labels visually attach to the next group's checkbox. Group spacing is now 36 px so each label clearly belongs to its own toggle.
+- **Zoom-to-fit button now uses a fit-frame icon** — the `1:1` reset button on the camera-preview thumbnail is renamed to `▭` with a "Zoom to fit" tooltip. Behaviour is unchanged (resets `PreviewZoom` to 1.0 = fit), only the symbol matches the user's mental model: `−` zoom out, `+` zoom in, `▭` fit.
+
 ## [2.1.1] - 2026-04-23
 
 Triggered by a user report (Jeff Morgan) of a consistent ~8–12 arcmin pattern offset on a 10Micron mount. Investigation showed the SKW helper's J2000 coordinates are correct (matches SIMBAD for λ Dra); the offset is caused by the mount's ASCOM driver misreporting its equatorial system (J2000 vs JNOW), which made NINA apply the wrong precession transformation. The plugin couldn't fix the driver bug, but it could have warned the user — instead it silently fell back to a blind slew when plate-solving failed, which is exactly the path that lets driver epoch bugs surface as pattern offsets.
