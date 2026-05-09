@@ -4,7 +4,14 @@ All notable changes to Collimation Helper for SkyWave will be documented in this
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [2.1.2] - 2026-04-26
+## [2.2.0] - 2026-05-09
+
+Triggered by a user report (Rick) on a 16″ GSO RC (FOV ~17×24 arcmin): NINA's plate-solver could not solve the centring frame on the chosen collimation star (Nekkar). The plugin's existing fallback would only kick in if `Center` raised an exception — but if the user wants to bypass plate-solving up front (because their mount points reliably to within FOV, or because the local plate-solver setup just won't solve a sparse field), there was no way to do that. The Center step always ran.
+
+### Added
+- **"Skip solve" panel toggle** — new checkbox next to "AF first" / "Crop" / "Del subs". When enabled, the plugin skips both the L-filter switch and NINA's `Center` (plate-solve) instruction, and goes straight to a blind `SlewToCoordinatesAsync` on the J2000 target. A loud `Notification.ShowWarning` toast and persistent `WARNING:`-style status text fire on every skipped run, calling out the two failure modes the plate-solve normally hides: (1) the star may not land on the sensor at all if mount pointing is worse than the FOV, and (2) any ASCOM driver epoch misreport (J2000 vs JNOW, e.g. 10Micron / NYX-101) translates directly into a pattern offset of ~8–12 arcmin at high declinations. Setting persists across sessions via `PluginOptionsAccessor`. Off by default — plate-solve remains the recommended path because it physically anchors the mount on the star regardless of driver bugs.
+
+
 
 Triggered by a user report (Rams) on a Pegasus NYX-101 mount: plate-solve at the centre star reported success, but the imaging sequence still started from a totally different point near Regulus. Investigation showed the centring step was fine — the failure was downstream at the defocused ring slews, which by design cannot be plate-solved and depend entirely on the mount driver's epoch handling. Also tightened the toggle-row layout in the panel after feedback that labels visually attached to the wrong checkbox, and replaced the `1:1` zoom-reset button with a clearer fit-to-frame icon.
 
