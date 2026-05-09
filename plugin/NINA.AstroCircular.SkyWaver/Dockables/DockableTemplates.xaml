@@ -118,6 +118,11 @@
                                ToolTip="Run autofocus before defocusing" />
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,0,36,0">
+                    <CheckBox IsChecked="{Binding SkipCentering}" VerticalAlignment="Center" />
+                    <TextBlock Text="Skip solve" Margin="4,0,0,0" FontSize="10" VerticalAlignment="Center"
+                               ToolTip="Skip plate-solve centering and use a blind slew. Use only if your mount points reliably to within the sensor FOV — otherwise the star may miss the chip and the ring pattern may be offset (e.g. driver J2000/JNOW epoch errors)." />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,36,0">
                     <CheckBox IsChecked="{Binding CropAfterStack}" VerticalAlignment="Center" />
                     <TextBlock Text="Crop" Margin="4,0,0,0" FontSize="10" VerticalAlignment="Center"
                                ToolTip="Crop stacked image to ring pattern + 100px margin" />

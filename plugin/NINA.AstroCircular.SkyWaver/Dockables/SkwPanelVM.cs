@@ -292,6 +292,18 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
             set { runAutofocus = value; RaisePropertyChanged(); SaveSettings(); }
         }
 
+        // ── Centering ──
+        // When true, skip NINA's Center (plate-solve) step and rely on a blind slew.
+        // Use this only if your mount pointing is reliably better than the FOV — if it
+        // isn't, the star may not land on the sensor at all. Plate-solve also masks
+        // ASCOM driver epoch bugs (J2000↔JNOW); skipping it lets any such offset
+        // propagate directly into the ring pattern.
+        private bool skipCentering = false;
+        public bool SkipCentering {
+            get => skipCentering;
+            set { skipCentering = value; RaisePropertyChanged(); SaveSettings(); }
+        }
+
         // ── Integration ──
 
         private bool cropAfterStack = false;
@@ -720,63 +732,85 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                     originalFilter = fwInfo.SelectedFilter.Name;
                 string captureFilter = ResolveFilterName(FilterName);
 
-                StatusText = $"Switching to {PlateSolveFilterName} filter for plate-solve...";
-                Progress = 3;
-                await SwitchFilter(PlateSolveFilterName, ct);
+                // Filter switch to L is only meaningful when we plate-solve; skip it
+                // when the user has opted out, so we don't disturb the wheel for nothing.
+                if (!SkipCentering) {
+                    StatusText = $"Switching to {PlateSolveFilterName} filter for plate-solve...";
+                    Progress = 3;
+                    await SwitchFilter(PlateSolveFilterName, ct);
+                }
 
                 // Step 2: Slew & Center on target star (plate-solve, in focus, L filter)
-                StatusText = $"Centering on {StarName} (slew + plate-solve)...";
+                StatusText = SkipCentering
+                    ? $"Blind-slewing to {StarName} (centering skipped)..."
+                    : $"Centering on {StarName} (slew + plate-solve)...";
                 Progress = 10;
                 var coords = new Coordinates(
                     Angle.ByHours(CoordinateUtils.ParseHMS(TargetRA)),
                     Angle.ByDegree(CoordinateUtils.ParseDMS(TargetDec)),
                     Epoch.J2000);
 
-                try {
-                    var centerInstruction = new Center(
-                        profileService, telescopeMediator, imagingMediator, filterWheelMediator,
-                        guiderMediator, domeMediator, domeFollower,
-                        new PlateSolverFactoryProxy(), new NINA.Core.Utility.WindowService.WindowServiceFactory()
-                    ) {
-                        Coordinates = new NINA.Astrometry.InputCoordinates(coords)
-                    };
-                    await centerInstruction.Execute(progressReporter, ct);
-
-                    // Sync the mount to the plate-solved J2000 coordinates. The Center step has
-                    // physically parked the scope on the star, so syncing here anchors the mount's
-                    // internal position model to the truth. If the ASCOM driver has a fixed epoch
-                    // offset (e.g. NYX-101, 10Micron J2000↔JNOW quirks), subsequent blind ring slews
-                    // — which can't plate-solve while defocused — at least start from a corrected
-                    // reference point. Sync is best-effort: not all drivers support it, so a failure
-                    // here is logged but never aborts the run.
-                    try {
-                        bool synced = await telescopeMediator.Sync(coords);
-                        if (synced)
-                            Logger.Info($"SKW: Mount synced to plate-solved coords for {StarName} (J2000 RA={coords.RA:F4}h Dec={coords.Dec:F4}°)");
-                        else
-                            Logger.Warning("SKW: Mount sync returned false — driver may not support sync. Ring slews will rely on driver epoch handling alone.");
-                    } catch (Exception syncEx) {
-                        Logger.Warning($"SKW: Mount sync after Center failed ({syncEx.Message}). Continuing — ring slews may drift if driver misreports epoch.");
-                    }
-
-                    StatusText = $"Centered on {StarName} successfully";
-                } catch (Exception psEx) {
-                    // Plate-solve is the one step that normally hides mount-side epoch bugs
-                    // (e.g. 10Micron ASCOM drivers that misreport EquatorialSystem): a successful
-                    // plate-solve physically parks the mount on the star regardless of the
-                    // driver's advertised epoch. Once we fall through to a blind slew, any
-                    // J2000 ↔ JNOW mismatch in the driver translates directly into a pattern
-                    // offset of ~8–12 arcmin at high declinations. Make this path LOUD so
-                    // users who thought they were plate-solving don't silently ship an offset run.
-                    Logger.Warning($"SKW: Plate-solve centering failed ({psEx.Message}). Falling back to blind slew. " +
+                if (SkipCentering) {
+                    // User opted out of plate-solving. Do a blind slew and warn loudly:
+                    // any ASCOM driver epoch misreport (J2000 vs JNOW) — or simple mount
+                    // pointing error larger than the sensor FOV — will translate directly
+                    // into a pattern offset, with no plate-solve to mask it.
+                    Logger.Warning($"SKW: Plate-solve centering skipped by user. Blind-slewing to {StarName}. " +
                                    "If the mount ASCOM driver misreports its equatorial system (J2000 vs JNOW), " +
                                    "the ring pattern will be offset by the precession amount.");
                     NINA.Core.Utility.Notification.Notification.ShowWarning(
-                        $"SKW: Plate-solve failed — blind-slewing to {StarName}.\n" +
-                        "The pattern may be offset if the mount's ASCOM driver misreports " +
-                        "its epoch (J2000 vs JNOW). Check the driver's equatorial system setting.");
-                    StatusText = $"WARNING: Plate-solve failed — blind slew to {StarName} (pattern may drift)";
+                        $"SKW: Centering skipped — blind-slewing to {StarName}.\n" +
+                        "The star may not land on the sensor and the pattern may be offset " +
+                        "if the mount's ASCOM driver misreports its epoch (J2000 vs JNOW).");
                     await telescopeMediator.SlewToCoordinatesAsync(coords, ct);
+                    StatusText = $"Blind slew to {StarName} complete (no plate-solve)";
+                } else {
+                    try {
+                        var centerInstruction = new Center(
+                            profileService, telescopeMediator, imagingMediator, filterWheelMediator,
+                            guiderMediator, domeMediator, domeFollower,
+                            new PlateSolverFactoryProxy(), new NINA.Core.Utility.WindowService.WindowServiceFactory()
+                        ) {
+                            Coordinates = new NINA.Astrometry.InputCoordinates(coords)
+                        };
+                        await centerInstruction.Execute(progressReporter, ct);
+
+                        // Sync the mount to the plate-solved J2000 coordinates. The Center step has
+                        // physically parked the scope on the star, so syncing here anchors the mount's
+                        // internal position model to the truth. If the ASCOM driver has a fixed epoch
+                        // offset (e.g. NYX-101, 10Micron J2000↔JNOW quirks), subsequent blind ring slews
+                        // — which can't plate-solve while defocused — at least start from a corrected
+                        // reference point. Sync is best-effort: not all drivers support it, so a failure
+                        // here is logged but never aborts the run.
+                        try {
+                            bool synced = await telescopeMediator.Sync(coords);
+                            if (synced)
+                                Logger.Info($"SKW: Mount synced to plate-solved coords for {StarName} (J2000 RA={coords.RA:F4}h Dec={coords.Dec:F4}°)");
+                            else
+                                Logger.Warning("SKW: Mount sync returned false — driver may not support sync. Ring slews will rely on driver epoch handling alone.");
+                        } catch (Exception syncEx) {
+                            Logger.Warning($"SKW: Mount sync after Center failed ({syncEx.Message}). Continuing — ring slews may drift if driver misreports epoch.");
+                        }
+
+                        StatusText = $"Centered on {StarName} successfully";
+                    } catch (Exception psEx) {
+                        // Plate-solve is the one step that normally hides mount-side epoch bugs
+                        // (e.g. 10Micron ASCOM drivers that misreport EquatorialSystem): a successful
+                        // plate-solve physically parks the mount on the star regardless of the
+                        // driver's advertised epoch. Once we fall through to a blind slew, any
+                        // J2000 ↔ JNOW mismatch in the driver translates directly into a pattern
+                        // offset of ~8–12 arcmin at high declinations. Make this path LOUD so
+                        // users who thought they were plate-solving don't silently ship an offset run.
+                        Logger.Warning($"SKW: Plate-solve centering failed ({psEx.Message}). Falling back to blind slew. " +
+                                       "If the mount ASCOM driver misreports its equatorial system (J2000 vs JNOW), " +
+                                       "the ring pattern will be offset by the precession amount.");
+                        NINA.Core.Utility.Notification.Notification.ShowWarning(
+                            $"SKW: Plate-solve failed — blind-slewing to {StarName}.\n" +
+                            "The pattern may be offset if the mount's ASCOM driver misreports " +
+                            "its epoch (J2000 vs JNOW). Check the driver's equatorial system setting.");
+                        StatusText = $"WARNING: Plate-solve failed — blind slew to {StarName} (pattern may drift)";
+                        await telescopeMediator.SlewToCoordinatesAsync(coords, ct);
+                    }
                 }
 
                 // Step 3: Switch to target filter for capture (before defocus).
@@ -1083,6 +1117,7 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                 accessor.SetValueInt32(SETTINGS_PREFIX + "SettleSeconds", SettleSeconds);
                 accessor.SetValueBoolean(SETTINGS_PREFIX + "IncludeCenter", IncludeCenter);
                 accessor.SetValueBoolean(SETTINGS_PREFIX + "RunAutofocus", RunAutofocus);
+                accessor.SetValueBoolean(SETTINGS_PREFIX + "SkipCentering", SkipCentering);
                 accessor.SetValueBoolean(SETTINGS_PREFIX + "CropAfterStack", CropAfterStack);
                 accessor.SetValueBoolean(SETTINGS_PREFIX + "AutoCleanSubFrames", AutoCleanSubFrames);
                 accessor.SetValueString(SETTINGS_PREFIX + "SkyWaveOutputDirectory", skyWaveOutputDirectory);
@@ -1112,6 +1147,7 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                 settleSeconds = accessor.GetValueInt32(SETTINGS_PREFIX + "SettleSeconds", settleSeconds);
                 includeCenter = accessor.GetValueBoolean(SETTINGS_PREFIX + "IncludeCenter", includeCenter);
                 runAutofocus = accessor.GetValueBoolean(SETTINGS_PREFIX + "RunAutofocus", runAutofocus);
+                skipCentering = accessor.GetValueBoolean(SETTINGS_PREFIX + "SkipCentering", skipCentering);
                 cropAfterStack = accessor.GetValueBoolean(SETTINGS_PREFIX + "CropAfterStack", cropAfterStack);
                 autoCleanSubFrames = accessor.GetValueBoolean(SETTINGS_PREFIX + "AutoCleanSubFrames", autoCleanSubFrames);
                 skyWaveOutputDirectory = accessor.GetValueString(SETTINGS_PREFIX + "SkyWaveOutputDirectory", skyWaveOutputDirectory);
