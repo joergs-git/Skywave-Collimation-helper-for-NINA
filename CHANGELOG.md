@@ -4,6 +4,13 @@ All notable changes to Collimation Helper for SkyWave will be documented in this
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.2.1] - 2026-05-14
+
+Follow-up to the 2.2.0 "Skip solve" toggle. Reported by Rick (16″ GSO RC, 17×24′ FOV) after he successfully ran 2.2.0: with the target star already plate-solved into the centre of his image, enabling Skip solve still issued a blind `SlewToCoordinatesAsync` to the cataloged J2000 of the star at the start of the run. That re-slew moved the mount several arcmin off the already-centered position (residual sync error, pointing model, refraction at his altitude) and the 80%-of-FOV ring then partially fell outside the sensor. The remedy he asked for — "sync the app to my current position" — is now what Skip solve does.
+
+### Changed
+- **Skip solve now centers the ring on the current mount pointing, not the cataloged star** — when the toggle is on, the plugin no longer issues an initial slew at all. It reads `telescopeMediator.GetInfo().RightAscension / .Declination`, treats that as the J2000 ring centre, and builds the capture pattern around it. The cataloged J2000 still drives the star picker, the visual map, and the warning text, but the actual on-sky pattern starts from wherever the user has the mount pointed when they press Run. The warning toast and log line have been reworded to reflect the new contract: "ring centered on current mount position — make sure the target is already visible in the FOV before pressing Run." If the mount is reported as disconnected at this point, the run aborts with a clear `SequenceEntityFailedException` rather than blind-slewing to a fallback. Default behaviour (Skip solve off → plate-solve + sync) is unchanged.
+
 ## [2.2.0] - 2026-05-09
 
 Triggered by a user report (Rick) on a 16″ GSO RC (FOV ~17×24 arcmin): NINA's plate-solver could not solve the centring frame on the chosen collimation star (Nekkar). The plugin's existing fallback would only kick in if `Center` raised an exception — but if the user wants to bypass plate-solving up front (because their mount points reliably to within FOV, or because the local plate-solver setup just won't solve a sparse field), there was no way to do that. The Center step always ran.

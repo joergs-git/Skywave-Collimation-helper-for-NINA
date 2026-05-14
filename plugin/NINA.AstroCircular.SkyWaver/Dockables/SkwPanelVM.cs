@@ -741,29 +741,57 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                 }
 
                 // Step 2: Slew & Center on target star (plate-solve, in focus, L filter)
+                // — OR — when SkipCentering is on, do not slew at all: read the mount's
+                // current RA/Dec and use that as the ring center. Reported by Rick (16″ GSO RC):
+                // even with Skip solve on, a blind slew to cataloged J2000 was nudging the
+                // already-centered star several arcmin off-axis (mount sync residual, pointing
+                // model, refraction), pushing the 80%-of-FOV ring partially outside his 17×24′ FOV.
+                // Trusting the user's current pointing — once they've centered the star
+                // manually — is strictly safer than re-issuing a slew the plate-solve can't undo.
                 StatusText = SkipCentering
-                    ? $"Blind-slewing to {StarName} (centering skipped)..."
+                    ? $"Using current mount position as ring center (centering skipped)..."
                     : $"Centering on {StarName} (slew + plate-solve)...";
                 Progress = 10;
+
+                // The cataloged target stays the catalog truth and seeds the visual map,
+                // but when SkipCentering is on the ACTUAL ring center is the live mount
+                // pointing, captured below into ringCenterCoords and used downstream.
                 var coords = new Coordinates(
                     Angle.ByHours(CoordinateUtils.ParseHMS(TargetRA)),
                     Angle.ByDegree(CoordinateUtils.ParseDMS(TargetDec)),
                     Epoch.J2000);
+                Coordinates ringCenterCoords = coords;
 
                 if (SkipCentering) {
-                    // User opted out of plate-solving. Do a blind slew and warn loudly:
-                    // any ASCOM driver epoch misreport (J2000 vs JNOW) — or simple mount
-                    // pointing error larger than the sensor FOV — will translate directly
-                    // into a pattern offset, with no plate-solve to mask it.
-                    Logger.Warning($"SKW: Plate-solve centering skipped by user. Blind-slewing to {StarName}. " +
-                                   "If the mount ASCOM driver misreports its equatorial system (J2000 vs JNOW), " +
-                                   "the ring pattern will be offset by the precession amount.");
+                    // User opted out of plate-solving — typically because their local solver
+                    // can't lock on a sparse / single-bright-star field. In that case the user
+                    // has almost certainly already centered the star manually (NINA framing
+                    // wizard, hand controller, or a prior plate-solve sync), so the SAFEST
+                    // ring center is the mount's current pointing — NOT a re-slew to the
+                    // cataloged J2000 coords, which would re-introduce any pointing residual
+                    // we'd otherwise be inheriting from. Read live mount RA/Dec, treat it
+                    // as J2000 (NINA's convention; epoch drift here is masked by the fact
+                    // that ALL ring slews share the same reference frame), and use it as
+                    // the ring origin downstream. No slew is issued.
+                    var info = telescopeMediator.GetInfo();
+                    if (info == null || !info.Connected) {
+                        throw new SequenceEntityFailedException(
+                            "Mount is not connected — cannot read current position for Skip solve.");
+                    }
+                    ringCenterCoords = new Coordinates(
+                        Angle.ByHours(info.RightAscension),
+                        Angle.ByDegree(info.Declination),
+                        Epoch.J2000);
+                    Logger.Warning(
+                        $"SKW: Skip solve enabled — ring will be centered on the current mount " +
+                        $"position (J2000 RA={ringCenterCoords.RA:F4}h Dec={ringCenterCoords.Dec:F4}°), " +
+                        $"NOT on the cataloged coords for {StarName} ({TargetRA} {TargetDec}). " +
+                        "No initial slew is performed. Make sure the target is already in the FOV.");
                     NINA.Core.Utility.Notification.Notification.ShowWarning(
-                        $"SKW: Centering skipped — blind-slewing to {StarName}.\n" +
-                        "The star may not land on the sensor and the pattern may be offset " +
-                        "if the mount's ASCOM driver misreports its epoch (J2000 vs JNOW).");
-                    await telescopeMediator.SlewToCoordinatesAsync(coords, ct);
-                    StatusText = $"Blind slew to {StarName} complete (no plate-solve)";
+                        $"SKW: Skip solve — ring centered on current mount position.\n" +
+                        $"Make sure {StarName} is already visible in the FOV before pressing Run. " +
+                        "No plate-solve and no initial slew will be performed.");
+                    StatusText = $"Ring centered on current mount position (skip solve, no slew)";
                 } else {
                     try {
                         var centerInstruction = new Center(
@@ -839,9 +867,12 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                 hasDefocused = true;
 
                 // Step 5: Compute positions and capture
+                // ringCenterCoords was set above: cataloged J2000 in the normal path
+                // (after Center + Sync, mount is parked on those coords), or the live
+                // mount pointing when SkipCentering is on (no slew was issued).
                 var (fovW, fovH) = CircularPatternCalculator.ComputeFOV(sensorW, sensorH, fl);
-                double centerRA = CoordinateUtils.ParseHMS(TargetRA);
-                double centerDec = CoordinateUtils.ParseDMS(TargetDec);
+                double centerRA = ringCenterCoords.RA;          // decimal hours
+                double centerDec = ringCenterCoords.Dec;        // decimal degrees
                 var positions = CircularPatternCalculator.Calculate(
                     centerRA, centerDec, fovW, fovH,
                     RingPositions, RadiusPercent, true, IncludeCenter);
