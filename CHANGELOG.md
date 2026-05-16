@@ -4,6 +4,15 @@ All notable changes to Collimation Helper for SkyWave will be documented in this
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.3.0] - 2026-05-16
+
+Triggered by a user report (Rick, 16″ GSO RC, no autofocuser): after v2.2.1 fixed the ring-centering, the remaining pain was focus. Without an EAF he has to manually straddle a narrow band — defocused enough that SkyWave can analyse the donut, but not so far that the field can't be worked with — and the only way to judge it was a blind guess-and-check over a full capture run. He asked for a way to pause and refocus by hand between centering and the ring capture.
+
+### Added
+- **"Focus break" panel toggle** — new checkbox next to "Skip solve" / "AF first" / "Crop" / "Del subs". When enabled, the automated EAF defocus step (`MoveFocuserRelative`) is replaced by an interactive pause: after centering, the plugin streams continuous **preview-only** exposures (reusing the configured exposure / filter / binning / gain / offset) and feeds them straight into the live preview via `UpdatePreviewImage`. None of these frames are written to disk or fed to integration. A prominent amber **"✓ Continue — focus is good"** button appears only during the break (bound to `IsAwaitingFocus`); pressing it ends the loop and starts the ring capture from the current, manually-set focus position. This makes the previously blind guess-and-check loop a live tuning loop for manual-focuser users. The toggle is the explicit control — there is intentionally **no** auto-detection of "EAF present vs absent", because ASCOM does not reliably distinguish a motorised from a manual focuser and many manual setups have no focuser connected at all; predictable explicit control was chosen over fragile detection. Setting persists across sessions via `PluginOptionsAccessor`. Off by default.
+
+  Safety: because the plugin never moves the focuser in this mode, `hasDefocused` stays false so the `finally` block does not try to "restore" a manual focuser it never touched. The break loop honours Cancel at every iteration and has a 240-frame cap (~32 min at an 8 s exposure) that aborts the run with a clear message if Continue is never pressed, so a walked-away user can't expose indefinitely.
+
 ## [2.2.1] - 2026-05-14
 
 Follow-up to the 2.2.0 "Skip solve" toggle. Reported by Rick (16″ GSO RC, 17×24′ FOV) after he successfully ran 2.2.0: with the target star already plate-solved into the centre of his image, enabling Skip solve still issued a blind `SlewToCoordinatesAsync` to the cataloged J2000 of the star at the start of the run. That re-slew moved the mount several arcmin off the already-centered position (residual sync error, pointing model, refraction at his altitude) and the 80%-of-FOV ring then partially fell outside the sensor. The remedy he asked for — "sync the app to my current position" — is now what Skip solve does.
