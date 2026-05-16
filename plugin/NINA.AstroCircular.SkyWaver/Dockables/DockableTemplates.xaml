@@ -127,6 +127,11 @@
                     <TextBlock Text="Crop" Margin="4,0,0,0" FontSize="10" VerticalAlignment="Center"
                                ToolTip="Crop stacked image to ring pattern + 100px margin" />
                 </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,36,0">
+                    <CheckBox IsChecked="{Binding FocusBreak}" VerticalAlignment="Center" />
+                    <TextBlock Text="Focus break" Margin="4,0,0,0" FontSize="10" VerticalAlignment="Center"
+                               ToolTip="Pause after centering and stream live preview-only exposures so you can defocus a MANUAL focuser by eye, then press Continue to start the ring capture. Replaces the automated EAF defocus. Frames shown during the break are not saved." />
+                </StackPanel>
                 <StackPanel Orientation="Horizontal">
                     <CheckBox IsChecked="{Binding AutoCleanSubFrames}" VerticalAlignment="Center" />
                     <TextBlock Text="Del subs" Margin="4,0,0,0" FontSize="10" VerticalAlignment="Center"
@@ -171,6 +176,13 @@
                         Padding="8,6" Margin="4,0,0,0" FontSize="13"
                         Visibility="{Binding IsRunning, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}" />
             </Grid>
+
+            <!-- Focus-break Continue — only visible while the run is paused waiting for manual focus -->
+            <Button Content="✓ Continue — focus is good" Command="{Binding ContinueFocusCommand}"
+                    Margin="0,0,0,3" Padding="8,6" FontWeight="Bold" FontSize="13"
+                    Background="#d99000" Foreground="White" BorderThickness="0"
+                    ToolTip="Stop the live preview and start the ring capture from the current (manually set) focus position"
+                    Visibility="{Binding IsAwaitingFocus, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}" />
 
             <!-- Progress -->
             <ProgressBar Value="{Binding Progress}" Minimum="0" Maximum="100" Height="8" Margin="0,0,0,2" />

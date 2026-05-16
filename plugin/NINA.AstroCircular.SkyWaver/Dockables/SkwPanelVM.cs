@@ -97,6 +97,7 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
             BrowseFolderCommand = new RelayCommand((o) => BrowseFolder());
             FindBestStarCommand = new RelayCommand((o) => FindBestStar());
             UseMountPositionCommand = new RelayCommand((o) => UseMountPosition());
+            ContinueFocusCommand = new RelayCommand((o) => ContinueFocus());
             ZoomInCommand = new RelayCommand((o) => ZoomIn());
             ZoomOutCommand = new RelayCommand((o) => ZoomOut());
             ZoomResetCommand = new RelayCommand((o) => ZoomReset());
@@ -127,6 +128,7 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
         public ICommand BrowseFolderCommand { get; }
         public ICommand FindBestStarCommand { get; }
         public ICommand UseMountPositionCommand { get; }
+        public ICommand ContinueFocusCommand { get; }
 
         // ── State ──
 
@@ -135,6 +137,19 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
             get => isRunning;
             set { isRunning = value; RaisePropertyChanged(); }
         }
+
+        // True only while the run is paused in a manual focus break, waiting for the
+        // user to press Continue. Drives the Continue button's visibility in the panel.
+        private bool isAwaitingFocus;
+        public bool IsAwaitingFocus {
+            get => isAwaitingFocus;
+            set { isAwaitingFocus = value; RaisePropertyChanged(); }
+        }
+
+        // Set from the UI thread by the Continue button, polled by the focus-break loop
+        // running on a background task — volatile so the loop sees the write promptly.
+        private volatile bool focusContinueRequested;
+        private void ContinueFocus() => focusContinueRequested = true;
 
         private string statusText = "Ready";
         public string StatusText {
@@ -302,6 +317,19 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
         public bool SkipCentering {
             get => skipCentering;
             set { skipCentering = value; RaisePropertyChanged(); SaveSettings(); }
+        }
+
+        // ── Focus break ──
+        // When true, the automated EAF defocus step is replaced by an interactive
+        // pause: the plugin streams preview-only exposures (never saved) so a user
+        // with a MANUAL focuser can rack out by eye and watch the donut size in the
+        // live preview, then press Continue to start the ring capture. Reported by
+        // Rick (16″ RC, no autofocuser): without an EAF there was no way to dial in
+        // the narrow defocus band SkyWave needs except blind guess-and-check runs.
+        private bool focusBreak = false;
+        public bool FocusBreak {
+            get => focusBreak;
+            set { focusBreak = value; RaisePropertyChanged(); SaveSettings(); }
         }
 
         // ── Integration ──
@@ -860,11 +888,73 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                     StatusText = "Autofocus complete";
                 }
 
-                // Step 4: Defocus
-                StatusText = $"Defocusing {(relativeDefocus > 0 ? "+" : "")}{relativeDefocus} steps...";
-                Progress = 18;
-                await focuserMediator.MoveFocuserRelative(relativeDefocus, ct);
-                hasDefocused = true;
+                // Step 4: Defocus — either an automated EAF move, or an interactive
+                // manual focus break with a live preview.
+                if (FocusBreak) {
+                    // Manual-focuser workflow (reported by Rick — 16″ RC with no EAF):
+                    // instead of MoveFocuserRelative, pause here and stream preview-only
+                    // exposures so the user can rack the focuser out by hand and watch
+                    // the donut grow/shrink in real time, then press Continue once the
+                    // defocus size is in the narrow band SkyWave can analyse. These
+                    // frames are NEVER written to disk or integrated — they exist only
+                    // to feed UpdatePreviewImage. hasDefocused stays false on purpose:
+                    // the plugin never moved the focuser, so the finally block must not
+                    // try to "restore" a manual focuser it never touched.
+                    focusContinueRequested = false;
+                    IsAwaitingFocus = true;
+                    try {
+                        StatusText = "Focus break — adjust your manual focuser, watch the preview, then press Continue";
+                        Progress = 18;
+                        var breakFilter = FilterUtils.LookupFilterInfo(captureFilter, profileService);
+                        var breakBinning = new BinningMode((short)Binning, (short)Binning);
+                        // Safety cap: if the user walks away and never presses Continue,
+                        // abort instead of exposing forever. At a typical 8 s exposure
+                        // 240 frames is ~32 min — ample for a by-eye manual focus tweak.
+                        const int maxBreakFrames = 240;
+                        int breakFrame = 0;
+                        while (!focusContinueRequested) {
+                            ct.ThrowIfCancellationRequested();
+                            if (breakFrame >= maxBreakFrames) {
+                                throw new TimeoutException(
+                                    $"Focus break auto-aborted after {maxBreakFrames} preview frames " +
+                                    "without Continue being pressed. Re-run when you're ready at the scope.");
+                            }
+                            breakFrame++;
+                            StatusText = $"Focus break — live preview frame {breakFrame} " +
+                                         "(manual focuser; press Continue when the donut size looks right)";
+                            var breakSeq = new CaptureSequence(
+                                ExposureTime,
+                                CaptureSequence.ImageTypes.LIGHT,
+                                breakFilter,
+                                breakBinning,
+                                1) {
+                                Gain = Gain,
+                                Offset = Offset
+                            };
+                            try {
+                                var breakExp = await imagingMediator.CaptureImage(breakSeq, ct, progressReporter);
+                                if (breakExp != null) {
+                                    var breakImg = await breakExp.ToImageData(progressReporter, ct);
+                                    // Preview only — deliberately NOT passed to RawFitsWriter.
+                                    if (breakImg != null) UpdatePreviewImage(breakImg);
+                                }
+                            } catch (OperationCanceledException) {
+                                throw;
+                            } catch (Exception breakEx) {
+                                Logger.Warning($"SKW: Focus-break preview frame {breakFrame} failed: {breakEx.Message}");
+                            }
+                        }
+                        Logger.Info($"SKW: Focus break ended by user after {breakFrame} preview frame(s).");
+                        StatusText = "Focus break complete — proceeding to ring capture";
+                    } finally {
+                        IsAwaitingFocus = false;
+                    }
+                } else {
+                    StatusText = $"Defocusing {(relativeDefocus > 0 ? "+" : "")}{relativeDefocus} steps...";
+                    Progress = 18;
+                    await focuserMediator.MoveFocuserRelative(relativeDefocus, ct);
+                    hasDefocused = true;
+                }
 
                 // Step 5: Compute positions and capture
                 // ringCenterCoords was set above: cataloged J2000 in the normal path
@@ -1149,6 +1239,7 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                 accessor.SetValueBoolean(SETTINGS_PREFIX + "IncludeCenter", IncludeCenter);
                 accessor.SetValueBoolean(SETTINGS_PREFIX + "RunAutofocus", RunAutofocus);
                 accessor.SetValueBoolean(SETTINGS_PREFIX + "SkipCentering", SkipCentering);
+                accessor.SetValueBoolean(SETTINGS_PREFIX + "FocusBreak", FocusBreak);
                 accessor.SetValueBoolean(SETTINGS_PREFIX + "CropAfterStack", CropAfterStack);
                 accessor.SetValueBoolean(SETTINGS_PREFIX + "AutoCleanSubFrames", AutoCleanSubFrames);
                 accessor.SetValueString(SETTINGS_PREFIX + "SkyWaveOutputDirectory", skyWaveOutputDirectory);
@@ -1179,6 +1270,7 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                 includeCenter = accessor.GetValueBoolean(SETTINGS_PREFIX + "IncludeCenter", includeCenter);
                 runAutofocus = accessor.GetValueBoolean(SETTINGS_PREFIX + "RunAutofocus", runAutofocus);
                 skipCentering = accessor.GetValueBoolean(SETTINGS_PREFIX + "SkipCentering", skipCentering);
+                focusBreak = accessor.GetValueBoolean(SETTINGS_PREFIX + "FocusBreak", focusBreak);
                 cropAfterStack = accessor.GetValueBoolean(SETTINGS_PREFIX + "CropAfterStack", cropAfterStack);
                 autoCleanSubFrames = accessor.GetValueBoolean(SETTINGS_PREFIX + "AutoCleanSubFrames", autoCleanSubFrames);
                 skyWaveOutputDirectory = accessor.GetValueString(SETTINGS_PREFIX + "SkyWaveOutputDirectory", skyWaveOutputDirectory);
