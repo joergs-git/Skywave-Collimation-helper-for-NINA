@@ -608,27 +608,38 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                     return;
                 }
 
-                // NINA's TelescopeInfo exposes RightAscension in decimal hours and
-                // Declination in decimal degrees. Native epoch depends on the mount;
-                // we treat it as J2000 downstream. Center will plate-solve the actual
-                // sky at these coordinates, so any epoch offset resolves on its own.
-                double raHours = info.RightAscension;
-                double decDeg = info.Declination;
+                // info.RightAscension / .Declination are RAW ASCOM values in the driver's
+                // declared EquatorialSystem (typically JNOW for most mounts; J2000 only when
+                // the driver explicitly reports it). info.Coordinates wraps them with the
+                // correct epoch tag. We MUST Transform to J2000 before storing, because the
+                // downstream Coordinates(..., Epoch.J2000) constructions and every
+                // SlewToCoordinatesAsync internally call Transform(EquatorialSystem) again —
+                // labelling raw mount-native RA/Dec as J2000 would double-precess and offset
+                // each slew by ~10–20 arcmin at typical declinations 26 years past J2000.0.
+                // Reported by Rick (SiTech II controller, 16" GSO RC) in v2.3.0: with Skip
+                // solve on, the first ring slew moved the manually-centered star several
+                // arcmin off-axis and partially out of the 17×24′ FOV.
+                var mountCoords = info.Coordinates;
+                if (mountCoords == null) {
+                    StatusText = "Mount returned no coordinates — cannot read current position";
+                    return;
+                }
+                var j2000 = mountCoords.Transform(Epoch.J2000);
 
                 // Batch update: set backing fields directly, raise PropertyChanged once
                 // per field, then SaveSettings + RebuildMap once. Going through the public
                 // setters would fire 3 SaveSettings (60 profile writes) and 2 RebuildMaps.
                 SelectedPreset = null;
                 starName = "Mount position";
-                targetRA = CoordinateUtils.ToHMS(raHours);
-                targetDec = CoordinateUtils.ToDMS(decDeg);
+                targetRA = CoordinateUtils.ToHMS(j2000.RA);
+                targetDec = CoordinateUtils.ToDMS(j2000.Dec);
                 RaisePropertyChanged(nameof(StarName));
                 RaisePropertyChanged(nameof(TargetRA));
                 RaisePropertyChanged(nameof(TargetDec));
                 SaveSettings();
                 RebuildMap();
 
-                StatusText = $"Using mount position: RA {TargetRA}, Dec {TargetDec}";
+                StatusText = $"Using mount position (J2000): RA {TargetRA}, Dec {TargetDec}";
             } catch (Exception ex) {
                 StatusText = $"Mount position read failed: {ex.Message}";
                 Logger.Warning($"SKW: UseMountPosition failed: {ex}");
@@ -797,22 +808,36 @@ namespace NINA.AstroCircular.SkyWaver.Dockables {
                     // wizard, hand controller, or a prior plate-solve sync), so the SAFEST
                     // ring center is the mount's current pointing — NOT a re-slew to the
                     // cataloged J2000 coords, which would re-introduce any pointing residual
-                    // we'd otherwise be inheriting from. Read live mount RA/Dec, treat it
-                    // as J2000 (NINA's convention; epoch drift here is masked by the fact
-                    // that ALL ring slews share the same reference frame), and use it as
-                    // the ring origin downstream. No slew is issued.
+                    // we'd otherwise be inheriting from. No slew is issued.
+                    //
+                    // Epoch handling (v2.3.1 fix): info.Coordinates is already correctly
+                    // labelled with the driver's EquatorialSystem (typically JNOW). We
+                    // Transform to J2000 here so that ringCenterCoords — and every ring
+                    // position derived from it — share a consistent J2000 reference frame.
+                    // The downstream SlewToCoordinatesAsync then precesses J2000→native on
+                    // each slew, which inverts our Transform symmetrically and lands the
+                    // mount exactly back on the recorded native pointing. Previously this
+                    // path constructed Coordinates(raw_native_RA, raw_native_Dec, J2000),
+                    // which combined with NINA's J2000→native slew precession produced a
+                    // ~10–20 arcmin double-precession offset at typical declinations 26
+                    // years past J2000.0 — reported by Rick (SiTech II, 16" GSO RC, 17×24′
+                    // FOV): the first ring slew moved his manually-centered star off-axis
+                    // and pushed the 80%-of-FOV pattern partially outside the sensor.
                     var info = telescopeMediator.GetInfo();
                     if (info == null || !info.Connected) {
                         throw new SequenceEntityFailedException(
                             "Mount is not connected — cannot read current position for Skip solve.");
                     }
-                    ringCenterCoords = new Coordinates(
-                        Angle.ByHours(info.RightAscension),
-                        Angle.ByDegree(info.Declination),
-                        Epoch.J2000);
+                    var mountCoords = info.Coordinates;
+                    if (mountCoords == null) {
+                        throw new SequenceEntityFailedException(
+                            "Mount returned no coordinates — cannot read current position for Skip solve.");
+                    }
+                    ringCenterCoords = mountCoords.Transform(Epoch.J2000);
                     Logger.Warning(
                         $"SKW: Skip solve enabled — ring will be centered on the current mount " +
-                        $"position (J2000 RA={ringCenterCoords.RA:F4}h Dec={ringCenterCoords.Dec:F4}°), " +
+                        $"position (J2000 RA={ringCenterCoords.RA:F4}h Dec={ringCenterCoords.Dec:F4}°, " +
+                        $"transformed from native epoch {mountCoords.Epoch}), " +
                         $"NOT on the cataloged coords for {StarName} ({TargetRA} {TargetDec}). " +
                         "No initial slew is performed. Make sure the target is already in the FOV.");
                     NINA.Core.Utility.Notification.Notification.ShowWarning(
